@@ -1,0 +1,26 @@
+.slots{
+    margin-bottom: 40px;
+}
+.slot{
+    display: inline-block;
+    padding: 3px;
+    margin-right: 3px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+}
+.slot.free{
+    color: green;
+    border: solid 1px green;
+}
+.slot.busy{
+    color: red;
+    border: solid 1px red;
+}
+
+input[type="submit"]{
+    color: green;
+    padding: 5px 10px;
+    border-radius: 3px;
+    background-color: white;
+    border: solid 1px green;
+}
