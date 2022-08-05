@@ -1,0 +1,6 @@
+<?
+$MESS['YLAB_POSITION_LIST_OPTIONS_NAME'] = "Настройки компонента отображения и поиска компаний/должностей";
+$MESS['YLAB_POSITION_LIST_PARAMETERS_POSITIONS_HL_NAME'] = "Должности";
+$MESS['YLAB_POSITION_LIST_PARAMETERS_ORGANIZATIONS_HL_NAME'] = "Организации";
+$MESS['YLAB_POSITION_LIST_PARAMETERS_TEMPLATE_NAME'] = "Шаблон";
+
