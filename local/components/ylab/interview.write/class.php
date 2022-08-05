@@ -14,7 +14,7 @@ use Bitrix\Main\Type\DateTime;
 use CIBlockElement;
 
 
-class YlabMeetingInterviewWrite extends \CBitrixComponent
+class YlabInterviewWrite extends \CBitrixComponent
 {
     const FORMATE_DATE_TIME = 'd.m.Y H:i:s';
     /**
