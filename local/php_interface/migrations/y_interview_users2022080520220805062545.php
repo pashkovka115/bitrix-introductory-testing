@@ -585,6 +585,7 @@ class y_interview_users2022080520220805062545 extends Version
 
     public function down()
     {
-        //your code ...
+        $helper = $this->getHelperManager();
+        $helper->Iblock()->deleteIblockIfExists('users');
     }
 }
