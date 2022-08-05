@@ -16,6 +16,11 @@
     color: red;
     border: solid 1px red;
 }
+.slot.not-user{
+    color: red;
+    border: solid 1px red;
+    text-decoration: line-through;
+}
 
 input[type="submit"]{
     color: green;

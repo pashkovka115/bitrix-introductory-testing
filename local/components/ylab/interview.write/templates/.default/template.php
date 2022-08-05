@@ -30,7 +30,7 @@ $this->setFrameMode(true);
                 $class = ' free';
             } elseif ($slot['SLOT']['FREE'] == 'N') {
                 $class = ' busy';
-            } ?>
+            }else{ $class = ' not-user'; } ?>
           <span <?php if ($slot['SLOT']['FREE'] == 'N'){?>title="<?= $slot['NAME'] ?>" <?php } ?>
               class="slot<?= $class ?>"><?= (new \Bitrix\Main\Type\DateTime($slot['SLOT']['VALUE']))->format('H:i') ?></span> <?php
         }
