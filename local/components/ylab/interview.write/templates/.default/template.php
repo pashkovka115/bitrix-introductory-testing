@@ -16,7 +16,6 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
 /** @var \CBitrixComponent $component */
 $this->setFrameMode(true);
 
-//d($arResult['USERS']);
 ?>
 <div class="slots"> <?php
     foreach ($arResult['SLOTS'] as $day => $slots) {
@@ -29,7 +28,7 @@ $this->setFrameMode(true);
             } elseif ($slot['SLOT']['FREE'] == 'N') {
                 $class = ' busy';
             } ?>
-          <span
+          <span <?php if ($slot['SLOT']['FREE'] == 'N'){?>title="<?= $slot['NAME'] ?>" <?php } ?>
               class="slot<?= $class ?>"><?= (new \Bitrix\Main\Type\DateTime($slot['SLOT']['VALUE']))->format('H:i') ?></span> <?php
         }
     }
