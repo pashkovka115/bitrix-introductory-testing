@@ -84,12 +84,13 @@ class YlabInterviewWrite extends \CBitrixComponent
     public function handlerPost(HttpRequest $request)
     {
         $input_data = $request->toArray();
+//        dd($input_data);
 
         if (check_bitrix_sessid()){
             CIBlockElement::SetPropertyValueCode(
                 $input_data['USER'], //  id пользователя из $_POST ($ELEMENT_ID)
                 $this->arParams['SLOT_DATETIME'], // имя свойства из настроек компонента ($PROPERTY_CODE)
-                $input_data['SLOT_DATETIME'] // новое значение (слот времени) ($PROPERTY_VALUE)
+                (new DateTime($input_data['SLOT_DATETIME']))->format(self::FORMATE_DATE_TIME) // новое значение (слот времени) ($PROPERTY_VALUE)
             );
         }
 
@@ -162,7 +163,7 @@ class YlabInterviewWrite extends \CBitrixComponent
             $db_slots[] = [
                 'NAME' => $fields['NAME'],
                 'ELEMENT_ID' => $fields['ID'],
-                'VALUE' => trim($properties[$this->arParams['SLOT_DATETIME']]['VALUE'])
+                'VALUE' => (new DateTime($properties[$this->arParams['SLOT_DATETIME']]['VALUE']))->format(self::FORMATE_DATE_TIME)
             ];
         }
 
