@@ -41,6 +41,7 @@ $this->setFrameMode(true);
   <?= bitrix_sessid_post() ?>
   <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_BOOK_TO_TIME') ?><br>
     <select name="SLOT_DATETIME">
+        <option value=""><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_RESET_TIME') ?></option>
         <?php
         foreach ($arResult['SLOTS'] as $day => $slots) {
             foreach ($slots as $slot) { ?>
