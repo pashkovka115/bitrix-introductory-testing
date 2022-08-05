@@ -1,7 +1,10 @@
 <?php
+
 if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
     die();
 }
+use Bitrix\Main\Localization\Loc;
+
 /** @var array $arParams */
 /** @var array $arResult */
 /** @global \CMain $APPLICATION */
@@ -36,7 +39,7 @@ $this->setFrameMode(true);
 
 <form class="form" action="<?= $APPLICATION->GetCurPage() ?>" method="post">
   <?= bitrix_sessid_post() ?>
-  <label>Забронировать время<br>
+  <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_BOOK_TO_TIME') ?><br>
     <select name="SLOT_DATETIME">
         <?php
         foreach ($arResult['SLOTS'] as $day => $slots) {
@@ -54,7 +57,7 @@ $this->setFrameMode(true);
         ?></select>
   </label>
   <br><br>
-  <label>Забронировать для этого пользователя<br>
+  <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_BOOK_TO_TIME_FOR_USER') ?><br>
     <select name="USER">
       <?php foreach ($arResult['USERS'] as $user) { ?>
             <option value="<?= $user['ID'] ?>"><?= $user['NAME'] ?></option>
