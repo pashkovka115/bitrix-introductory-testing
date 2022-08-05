@@ -7,7 +7,6 @@
     }
   },
   "require": {
-    "guzzlehttp/guzzle": "^7.4",
     "andreyryabin/sprint.migration": "^4.1"
   },
   "config": {
