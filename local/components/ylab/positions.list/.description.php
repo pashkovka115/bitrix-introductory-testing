@@ -11,5 +11,6 @@ $arComponentDescription = [
         "ID" => Loc::getMessage("YLAB_POSITIONS_LIST_COMPONENT_PATH_ID"),
         "NAME" => Loc::getMessage("YLAB_POSITIONS_LIST_COMPONENT_PATH_NAME"),
     ],
+
 ];
 ?>

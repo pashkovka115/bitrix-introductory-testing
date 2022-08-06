@@ -3,13 +3,13 @@
 namespace YLab\Components;
 
 use Bitrix\Highloadblock as HL;
-use \Bitrix\Main\Grid\Options as GridOptions;
-use \Bitrix\Main\Localization\Loc;
-use \Bitrix\Main\Loader;
-use \Bitrix\Main\UI\PageNavigation;
+use Bitrix\Main\Grid\Options as GridOptions;
+use Bitrix\Main\Localization\Loc;
+use Bitrix\Main\Loader;
+use Bitrix\Main\UI\PageNavigation;
 use \CBitrixComponent;
 use \Exception;
-use \Bitrix\Main\UI\Filter\Options;
+use Bitrix\Main\UI\Filter\Options;
 
 /**
  * Компонент отображения и поиска компаний/должностей
@@ -53,10 +53,14 @@ class PositionsListComponent extends CBitrixComponent
 
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
             $this->positions_hlblock_name = $this->arParams['POSITIONS_HL_NAME'];
+        }else {
+            exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR2'));
         }
 
         if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
             $this->organizations_hlblock_name = $this->arParams['ORGANIZATIONS_HL_NAME'];
+        }else {
+            exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR3'));
         }
 
 
