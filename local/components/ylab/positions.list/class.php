@@ -24,10 +24,10 @@ class PositionsListComponent extends CBitrixComponent
     /** @var string $templateName Имя шаблона компонента */
     private $templateName;
 
-    /** @var string $positions_hlblock_name ID hl блока Должности */
+    /** @var string $positions_hlblock_name Символьный код hl блока Должности */
     private string $positions_hlblock_name;
 
-    /** @var string $organizations_hlblock_name ID hl блока Организации */
+    /** @var string $organizations_hlblock_name Символьный код hl блока Организации */
     private string $organizations_hlblock_name;
 
     /**

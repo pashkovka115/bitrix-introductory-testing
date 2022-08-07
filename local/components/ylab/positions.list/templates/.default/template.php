@@ -7,9 +7,7 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
 <?php
 
 use Bitrix\Main\Localization\Loc;
-//echo "<pre>";
-//print_r($arResult);
-//echo "</pre>";
+
 ?>
 
 <? if (!$arResult['IS_HL_MODULE_INCLUDED']) : ?>
