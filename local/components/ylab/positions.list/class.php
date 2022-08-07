@@ -53,13 +53,13 @@ class PositionsListComponent extends CBitrixComponent
 
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
             $this->positions_hlblock_name = $this->arParams['POSITIONS_HL_NAME'];
-        }else {
+        } else {
             exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR2'));
         }
 
         if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
             $this->organizations_hlblock_name = $this->arParams['ORGANIZATIONS_HL_NAME'];
-        }else {
+        } else {
             exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR3'));
         }
 
@@ -89,28 +89,11 @@ class PositionsListComponent extends CBitrixComponent
     {
         $result = [];
 
-        /**
-         * Получаем информацию о сущностях из БД
-         */
         $positions_hlblock_id = $this->getHlBlockIdByName($this->positions_hlblock_name);
         $organizations_hlblock_id = $this->getHlBlockIdByName($this->organizations_hlblock_name);
 
-        $positions_hlblock = HL\HighloadBlockTable::getById($positions_hlblock_id)->fetch();
-        $organizations_hlblock = HL\HighloadBlockTable::getById($organizations_hlblock_id)->fetch();
-
-        /**
-         * Инициализация сущностей
-         * @var \Bitrix\Main\Entity\Base $entity
-         */
-        $positions_entity = HL\HighloadBlockTable::compileEntity($positions_hlblock);
-        $organizations_entity = HL\HighloadBlockTable::compileEntity($organizations_hlblock);
-
-        /**
-         * Имена классов
-         * @var \Bitrix\Main\Entity\DataManager $dataClass
-         */
-        $positionsDataClass = $positions_entity->getDataClass();
-        $organizationsProgramDataClass = $organizations_entity->getDataClass();
+        $positionsDataClass = $this->getEntityDataClass($positions_hlblock_id);
+        $organizationsProgramDataClass = $this->getEntityDataClass($organizations_hlblock_id);
 
         if (!$this->getGridNav()->allRecordsShown()) {
             $arNav['iNumPage'] = $this->getGridNav()->getCurrentPage();
@@ -203,7 +186,6 @@ class PositionsListComponent extends CBitrixComponent
     }
 
 
-
     /**
      * Возвращает идентификатор грида.
      *
@@ -255,31 +237,6 @@ class PositionsListComponent extends CBitrixComponent
           ],
 
         ];
-    }
-
-    /**
-     * Метод возвращает ID инфоблока по символьному коду
-     *
-     * @param $code
-     *
-     * @return int|void
-     * @throws Exception
-     */
-    public static function getHlBlockIdByName($name)
-    {
-
-        $HL = HL\HighloadBlockTable::getList([
-          'select' => ['ID'],
-          'filter' => ['NAME' => $name],
-          'limit' => '1',
-          'cache' => ['ttl' => 3600],
-        ]);
-        $return = $HL->fetch();
-        if (!$return) {
-            throw new Exception('HL block with name "' . $name . '" not found');
-        }
-
-        return $return['ID'];
     }
 
     /**
@@ -382,6 +339,72 @@ class PositionsListComponent extends CBitrixComponent
         }
 
         return $arFilter;
+    }
+
+
+    /**
+     *  Метод возвращает ID HL блока по названию сущности
+     *
+     * @param $name
+     * @return mixed
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
+     */
+    public static function getHlBlockIdByName($name)
+    {
+        $return = null;
+
+        if (Loader::IncludeModule('highloadblock')) {
+            $HL = HL\HighloadBlockTable::getList([
+              'select' => ['ID'],
+              'filter' => ['NAME' => $name],
+              'limit' => '1',
+              'cache' => ['ttl' => 3600],
+            ]);
+            $return = $HL->fetch();
+        }
+
+        if (!$return) {
+            throw new Exception('HL block with name "' . $name . '" not found');
+        }
+
+        return $return['ID'];
+    }
+
+
+    /**
+     * Получение entityDataClass HL блока
+     *
+     * @param $hlblock_id
+     * @return \Bitrix\Main\ORM\Data\DataManager|string
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\LoaderException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
+     */
+    public static function getEntityDataClass($hlblock_id)
+    {
+
+        if (empty($hlblock_id) || $hlblock_id < 1)
+        {
+            return false;
+        }
+
+        $entityDataClass = null;
+
+        if (Loader::IncludeModule('highloadblock')) {
+
+            try {
+                $hlblock = HL\HighloadBlockTable::getById($hlblock_id)->fetch();
+                $entity = HL\HighloadBlockTable::compileEntity($hlblock);
+                $entityDataClass = $entity->getDataClass();
+            } catch (\Bitrix\Main\SystemException $e) {
+                echo 'Error - The HL block does not exist';
+            }
+        }
+
+        return $entityDataClass;
     }
 
 }
