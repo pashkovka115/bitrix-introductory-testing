@@ -2,16 +2,15 @@
     die();
 }
 use Bitrix\Main\Localization\Loc;
-
 ?>
 
-<?if ( $arResult["RESULTING_PAGE"] == "y") : ?>
-<h2><?=Loc::getMessage("YLAB.TESTING.COUNT.TRUE.ANSWER")?><?=$arResult["COUNT_TRUE_ANSWER"]?></h2>
+<?if ( $arResult["NEW_QUESTIONS"] == 'y') : ?>
+<h2><?=Loc::getMessage("YLAB_TESTING_COUNT_TRUE_ANSWER")?><?=$arResult["COUNT_TRUE_ANSWER"]?></h2>
 
-<? foreach ($arResult["RANDOM_LIST"] as $key => $arItem) : ?>
+<? foreach ($arResult["QUESTION_LIST"] as $key => $arItem) : ?>
     <h2><?=($arItem["NAME"])?></h2>
-    <? foreach($arItem["ANSWER"] as $itemAnswer) : ?>
-        <?if ($itemAnswer == $arItem["TRUE_ANSWER"]) : ?>
+    <? foreach($arItem["ANSWER"] as $itemAnswer) : ;?>
+        <?if ($itemAnswer == $arItem["TRUE_ANSWER"] or $itemAnswer == null) : ?>
             <h3 style="color:green"><?=$arItem["TRUE_ANSWER"]?></h3>
         <?else:?>
                 <p><?=$itemAnswer?></p>
@@ -20,19 +19,20 @@ use Bitrix\Main\Localization\Loc;
     <? endforeach; ?>
 <? endforeach; ?>
 <form action="" method="post">
-    <button type="submit" name="redirect" value="y"><?=Loc::getMessage("YLAB.TESTING.TAKE.TEST.AGAIN")?></button>
+    <button type="submit" name="newQuestions" value="y"><?=Loc::getMessage("YLAB_TESTING_TAKE_TEST_AGAIN")?></button>
 </form>
 
 <?else:?>
     <form action="" method="post">
-        <? foreach ($arResult["RANDOM_LIST"] as $key => $arItem) : ?>
+        <? foreach ($arResult["QUESTION_LIST"] as $key => $arItem) : ?>
             <h2><?=($arItem["NAME"])?></h2>
             <? foreach($arItem["ANSWER"] as $itemAnswer) : ?>
-                <input type="checkbox" id="<?=$itemAnswer?>" name="<?=$key?>" value="<?=$itemAnswer?>">
+                <input type=<?=$arItem["TYPE_QUESTION"]?> id="<?=$itemAnswer?>" name="<?=$key?>" value="<?=$itemAnswer?>">
                 <label for="<?=$itemAnswer?>"><?=$itemAnswer?></label><p></p>
             <? endforeach; ?>
         <? endforeach; ?>
-        <input type="submit" value="<?=Loc::getMessage("YLAB.TESTING.SEND.BUTTON")?>">
+        <button type="submit" name="newQuestions" value="n"><?=Loc::getMessage("YLAB_TESTING_SEND_BUTTON")?></button>
+
     </form>
 <?endif;?>
 
