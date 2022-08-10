@@ -1,22 +1,25 @@
 <?php
 
-if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED!==true) die();
+if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true) {
+    die();
+}
 
 use Bitrix\Main\Localization\Loc;
 
-if(!CModule::IncludeModule('iblock'))
+if (!CModule::IncludeModule('iblock')) {
     return;
-
-$arTypesEx = CIBlockParameters::GetIBlockTypes();
-
-$arIBlocks = [];
-$db_iblock = CIBlock::GetList(['SORT'=>'ASC'], ['SITE_ID'=>$_REQUEST['site'], 'TYPE' => ($arCurrentValues['IBLOCK_TYPE']!='-'?$arCurrentValues['IBLOCK_TYPE']:'')]);
-while($arRes = $db_iblock->Fetch()) {
-    $arIBlocks[$arRes['ID']] = '[' . $arRes['ID'] . '] ' . $arRes['NAME'];
 }
 
+$iblockTypes = CIBlockParameters::GetIBlockTypes();
 
-
+$iblocks = [];
+$dbIblock = CIBlock::GetList(['SORT' => 'ASC'], [
+    'SITE_ID' => $_REQUEST['site'],
+    'TYPE' => ($arCurrentValues['IBLOCK_TYPE'] != '-' ? $arCurrentValues['IBLOCK_TYPE'] : '')
+]);
+while ($res = $dbIblock->Fetch()) {
+    $iblocks[$res['ID']] = '[' . $res['ID'] . '] ' . $res['NAME'];
+}
 
 
 $arComponentParameters = [
@@ -35,19 +38,19 @@ $arComponentParameters = [
         ],
     ],
     'PARAMETERS' => [
-        'IBLOCK_TYPE'  =>  [
+        'IBLOCK_TYPE' => [
             'PARENT' => 'IBLOCKS',
             'NAME' => Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_IBLOCK_TYPE'),
             'TYPE' => 'LIST',
-            'VALUES' => $arTypesEx,
+            'VALUES' => $iblockTypes,
             'DEFAULT' => 'news',
             'REFRESH' => 'Y',
         ],
-        'IBLOCK_ID'  =>  [
+        'IBLOCK_ID' => [
             'PARENT' => 'IBLOCKS',
             'NAME' => Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_IBLOCK_ID'),
             'TYPE' => 'LIST',
-            'VALUES' => $arIBlocks,
+            'VALUES' => $iblocks,
             'DEFAULT' => '',
             'MULTIPLE' => 'N',
         ],
