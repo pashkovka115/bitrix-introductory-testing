@@ -53,7 +53,6 @@ bower_components
 package-lock.json
 *.txt
 *.log
-_*
 
 #composer venor files
 /local/composer/vendor/
