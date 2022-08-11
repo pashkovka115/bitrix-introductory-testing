@@ -5,7 +5,6 @@ BX.ready(function () {
             if (!e) {
                 e = window.event;
             }
-            console.log("click!");
             BX.ajax.runComponentAction('ylab:interview.user.add',
                 'checkPassport', {
                     mode: 'class',
