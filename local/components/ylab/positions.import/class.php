@@ -21,11 +21,11 @@ use \CBitrixComponent;
 class PositionsImportComponent extends CBitrixComponent
 {
 
-    /** @var string $positions_hlblock_name Символьный код hl блока Должности */
-    private string $positions_hlblock_name;
+    /** @var string $positionsHlblockName Символьный код hl блока Должности */
+    private string $positionsHlblockName;
 
-    /** @var string $organizations_hlblock_name Символьный код hl блока Организации */
-    private string $organizations_hlblock_name;
+    /** @var string $organizationsHlblockName Символьный код hl блока Организации */
+    private string $organizationsHlblockName;
 
 
     /**
@@ -45,13 +45,13 @@ class PositionsImportComponent extends CBitrixComponent
         // Инициализация параметров компонента
 
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
-            $this->positions_hlblock_name = $this->arParams['POSITIONS_HL_NAME'];
+            $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
         } else {
             exit(Loc::getMessage('YLAB_POSITIONS_IMPORT_ERROR2'));
         }
 
         if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-            $this->organizations_hlblock_name = $this->arParams['ORGANIZATIONS_HL_NAME'];
+            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
         } else {
             exit(Loc::getMessage('YLAB_POSITIONS_IMPORT_ERROR3'));
         }
@@ -116,8 +116,8 @@ class PositionsImportComponent extends CBitrixComponent
 
         $organizationsData = null;
 
-        if (in_array($this->organizations_hlblock_name, $allSheetsNames)) {
-            $organizationsData = $spreadsheet->getSheetByName($this->organizations_hlblock_name)->toArray();
+        if (in_array($this->organizationsHlblockName, $allSheetsNames)) {
+            $organizationsData = $spreadsheet->getSheetByName($this->organizationsHlblockName)->toArray();
         }
 
         // Массив с заголовками таблицы в xlsx (заголовки должны быть в 1-й строке документа/таблицы)
@@ -130,22 +130,19 @@ class PositionsImportComponent extends CBitrixComponent
             $orgFieldCodes = array_shift($orgRecords);
         }
 
-
-        $hlblock_id = $this->getHlBlockIdByName($this->organizations_hlblock_name);
+        $hlblockId = $this->getHlBlockIdByName($this->organizationsHlblockName);
         $hlBlockFieldsNames = [];
 
-        if (in_array($hlblock_id, $this->getSyteHlblockIds())) {
-            $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblock_id);
+        if (in_array($hlblockId, $this->getSyteHlblockIds())) {
+            $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
         }
 
-
-        $fetchAll = $this->fetchAll($this->getEntityDataClass($hlblock_id), array(), array('*'), array(), array(), array());
+        $fetchAll = $this->fetchAll($this->getEntityDataClass($hlblockId), array(), array('*'), array(), array(), array());
 
 
         // Если все поля из заголовка таблицы страницы xlsx есть в выбранном HL то пишем
         if (empty(array_diff($orgFieldCodes, array_intersect($orgFieldCodes, $hlBlockFieldsNames)))) {
 
-            $dataForRecord = [];
             foreach ($orgRecords as $orgRecord) {
                 $rs = [];
                 $writePermission = true;
@@ -160,13 +157,12 @@ class PositionsImportComponent extends CBitrixComponent
                 }
                 // Если запись из xlsx уже есть в HL то не пишем
                 foreach ($fetchAll as $element) {
-//            if (array_intersect($rs, $element)) {
                     if ($rs['UF_COMPANY_INN_CODE'] == $element['UF_COMPANY_INN_CODE']) {
                         $writePermission = false;
                     }
                 }
                 if ($writePermission) {
-                    $this->addHLblockRecords($this->getEntityDataClass($hlblock_id), $rs);
+                    $this->addHLblockRecords($this->getEntityDataClass($hlblockId), $rs);
                 }
 
             }
@@ -207,8 +203,8 @@ class PositionsImportComponent extends CBitrixComponent
 
         $positionsData = null;
 
-        if (in_array($this->positions_hlblock_name, $allSheetsNames)) {
-            $positionsData = $spreadsheet->getSheetByName($this->positions_hlblock_name)->toArray();
+        if (in_array($this->positionsHlblockName, $allSheetsNames)) {
+            $positionsData = $spreadsheet->getSheetByName($this->positionsHlblockName)->toArray();
         }
 
         // Массив с заголовками таблицы в xlsx (заголовки должны быть в 1-й строке документа/таблицы)
@@ -222,21 +218,20 @@ class PositionsImportComponent extends CBitrixComponent
         }
 
 
-        $hlblock_id = $this->getHlBlockIdByName($this->positions_hlblock_name);
+        $hlblockId = $this->getHlBlockIdByName($this->positionsHlblockName);
         $hlBlockFieldsNames = [];
 
-        if (in_array($hlblock_id, $this->getSyteHlblockIds())) {
-            $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblock_id);
+        if (in_array($hlblockId, $this->getSyteHlblockIds())) {
+            $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
         }
 
 
-        $fetchAll = $this->fetchAll($this->getEntityDataClass($hlblock_id), array(), array('*'), array(), array(), array());
+        $fetchAll = $this->fetchAll($this->getEntityDataClass($hlblockId), array(), array('*'), array(), array(), array());
 
 
         // Если все поля из заголовка таблицы страницы xlsx есть в выбранном HL то пишем
         if (empty(array_diff($positionsFieldCodes, array_intersect($positionsFieldCodes, $hlBlockFieldsNames)))) {
 
-            $dataForRecord = [];
             foreach ($positionsRecords as $positionRecord) {
                 $rs = [];
                 $writePermission = true;
@@ -257,7 +252,7 @@ class PositionsImportComponent extends CBitrixComponent
                     }
                 }
                 if ($writePermission) {
-                    $this->addHLblockRecords($this->getEntityDataClass($hlblock_id), $rs);
+                    $this->addHLblockRecords($this->getEntityDataClass($hlblockId), $rs);
                 }
 
             }
@@ -324,19 +319,19 @@ class PositionsImportComponent extends CBitrixComponent
     /**
      * Получение массива имен полей HL блока
      *
-     * @param $hlblock_id
+     * @param $hlblockId
      * @return array
      * @throws \Bitrix\Main\ArgumentException
      * @throws \Bitrix\Main\LoaderException
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
-    public static function getHlBlockFieldsNames($hlblock_id)
+    public static function getHlBlockFieldsNames($hlblockId)
     {
         $hlBlockFieldsNames = [];
 
         if (Loader::IncludeModule('highloadblock')) {
-            $hlblock = HL\HighloadBlockTable::getById($hlblock_id)->fetch();
+            $hlblock = HL\HighloadBlockTable::getById($hlblockId)->fetch();
             $entity = HL\HighloadBlockTable::compileEntity($hlblock);
             $hlBlockFields = $entity->getFields();
             $hlBlockFieldsNames = [];
@@ -380,18 +375,18 @@ class PositionsImportComponent extends CBitrixComponent
     /**
      * Возвращает EntityDataClass HL блока
      *
-     * @param $hlblock_id
+     * @param $hlblockId
      * @return \Bitrix\Main\ORM\Data\DataManager|string|null
      * @throws \Bitrix\Main\LoaderException
      */
-    private function getEntityDataClass($hlblock_id)
+    private function getEntityDataClass($hlblockId)
     {
         $entityDataClass = null;
 
         if (Loader::IncludeModule('highloadblock')) {
 
             try {
-                $hlblock = HL\HighloadBlockTable::getById($hlblock_id)->fetch();
+                $hlblock = HL\HighloadBlockTable::getById($hlblockId)->fetch();
                 $entity = HL\HighloadBlockTable::compileEntity($hlblock);
                 $entityDataClass = $entity->getDataClass();
             } catch (\Bitrix\Main\SystemException $e) {

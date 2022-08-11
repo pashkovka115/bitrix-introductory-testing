@@ -24,8 +24,8 @@ class PositionsListComponent extends CBitrixComponent
     /** @var string $templateName Имя шаблона компонента */
     private $templateName;
 
-    /** @var string $positions_hlblock_name Символьный код hl блока Должности */
-    private string $positions_hlblock_name;
+    /** @var string $positionsHlblockName Символьный код hl блока Должности */
+    private string $positionsHlblockName;
 
     /** @var string $organizations_hlblock_name Символьный код hl блока Организации */
     private string $organizations_hlblock_name;
@@ -52,7 +52,7 @@ class PositionsListComponent extends CBitrixComponent
         $this->templateName = $this->GetTemplateName();
 
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
-            $this->positions_hlblock_name = $this->arParams['POSITIONS_HL_NAME'];
+            $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
         } else {
             exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR2'));
         }
@@ -89,11 +89,11 @@ class PositionsListComponent extends CBitrixComponent
     {
         $result = [];
 
-        $positions_hlblock_id = $this->getHlBlockIdByName($this->positions_hlblock_name);
-        $organizations_hlblock_id = $this->getHlBlockIdByName($this->organizations_hlblock_name);
+        $positionsHlblockId = $this->getHlBlockIdByName($this->positionsHlblockName);
+        $organizationsHlblockId = $this->getHlBlockIdByName($this->organizations_hlblock_name);
 
-        $positionsDataClass = $this->getEntityDataClass($positions_hlblock_id);
-        $organizationsProgramDataClass = $this->getEntityDataClass($organizations_hlblock_id);
+        $positionsDataClass = $this->getEntityDataClass($positionsHlblockId);
+        $organizationsProgramDataClass = $this->getEntityDataClass($organizationsHlblockId);
 
         if (!$this->getGridNav()->allRecordsShown()) {
             $arNav['iNumPage'] = $this->getGridNav()->getCurrentPage();
@@ -193,7 +193,7 @@ class PositionsListComponent extends CBitrixComponent
      */
     private function getGridId(): string
     {
-        return 'ylab_position_list_' . $this->positions_hlblock_name;
+        return 'ylab_position_list_' . $this->positionsHlblockName;
     }
 
 
@@ -376,17 +376,17 @@ class PositionsListComponent extends CBitrixComponent
     /**
      * Получение entityDataClass HL блока
      *
-     * @param $hlblock_id
+     * @param $hlblockId
      * @return \Bitrix\Main\ORM\Data\DataManager|string
      * @throws \Bitrix\Main\ArgumentException
      * @throws \Bitrix\Main\LoaderException
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
-    public static function getEntityDataClass($hlblock_id)
+    public static function getEntityDataClass($hlblockId)
     {
 
-        if (empty($hlblock_id) || $hlblock_id < 1)
+        if (empty($hlblockId) || $hlblockId < 1)
         {
             return false;
         }
@@ -396,7 +396,7 @@ class PositionsListComponent extends CBitrixComponent
         if (Loader::IncludeModule('highloadblock')) {
 
             try {
-                $hlblock = HL\HighloadBlockTable::getById($hlblock_id)->fetch();
+                $hlblock = HL\HighloadBlockTable::getById($hlblockId)->fetch();
                 $entity = HL\HighloadBlockTable::compileEntity($hlblock);
                 $entityDataClass = $entity->getDataClass();
             } catch (\Bitrix\Main\SystemException $e) {
