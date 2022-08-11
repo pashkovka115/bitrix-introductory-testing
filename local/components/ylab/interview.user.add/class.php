@@ -9,21 +9,54 @@ use Bitrix\Main\HttpRequest;
 use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Loader;
 use CIBlockElement;
+use Bitrix\Main\Engine\Contract\Controllerable;
 
 
-class YlabInterviewUserAddForm extends \CBitrixComponent
+class YlabInterviewUserAddForm extends \CBitrixComponent implements Controllerable
 {
     const IBLOCK_CODE = 'ylab_interview_users';
+
+    public function configureActions()
+    {
+
+        return [
+            'checkField' => [
+                'prefilters' => [],
+            ],
+        ];
+    }
+
+    public function checkPassportAction($post)
+    {
+        $passport = $post['passport'];
+        $iblock_id = $post['iblock_id'];
+        $elements = [];
+        $filter = ['IBLOCK_ID' => $iblock_id];
+        CIBlockElement::GetPropertyValuesArray($elements, $filter['IBLOCK_ID'], $filter);
+        unset($rows, $filter, $order);
+        $data["correct"] = 1;
+        $data["message"] = Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_PASSPORT_CORRECT');
+        foreach ($elements as $element_id => $element_property) {
+            if ($element_property["PASSPORT"]["~VALUE"] == $passport) {
+                $data["correct"] = 0;
+                $data["message"] = Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_PASSPORT_ERROR');
+                return $data;
+            }
+        }
+
+        return $data;
+    }
 
     public function executeComponent()
     {
         if (Loader::includeModule('iblock')) {
             $request = Application::getInstance()->getContext()->getRequest();
             $input_date = $request->toArray();
+            $iblock_id = $this->getIblockIdFromCode(self::IBLOCK_CODE);
+            $this->arResult["iblock_id"] = $iblock_id;
             if ($request->isPost() && $this->checkFields($input_date)) {
                 $date = new DateTime();
                 $login = $date->getTimestamp();
-                $iblock_id = $this->getIblockIdFromCode(self::IBLOCK_CODE);
                 if ($this->checkLogin($login, $iblock_id)) {
                     $password = $this->generatePassword(8, "0123456789");
                     $property_values = array();
