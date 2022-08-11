@@ -266,11 +266,12 @@ class PositionsImportComponent extends CBitrixComponent
 
 
     /**
-     *  Метод возвращает ID HL блока по названию сущности
+     * Метод возвращает ID HL блока по названию сущности
      *
      * @param $name
      * @return mixed
      * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\LoaderException
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
@@ -286,10 +287,6 @@ class PositionsImportComponent extends CBitrixComponent
               'cache' => ['ttl' => 3600],
             ]);
             $return = $HL->fetch();
-        }
-
-        if (!$return) {
-            throw new Exception('HL block with name "' . $name . '" not found');
         }
 
         return $return['ID'];
