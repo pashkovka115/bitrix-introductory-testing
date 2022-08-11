@@ -34,11 +34,11 @@ class YlabInterviewUserAddForm extends \CBitrixComponent implements Controllerab
         $filter = ['IBLOCK_ID' => $iblock_id];
         CIBlockElement::GetPropertyValuesArray($elements, $filter['IBLOCK_ID'], $filter);
         unset($rows, $filter, $order);
-        $data["correct"] = 1;
+        $data["isCorrect"] = "Y";
         $data["message"] = Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_PASSPORT_CORRECT');
         foreach ($elements as $element_id => $element_property) {
             if ($element_property["PASSPORT"]["~VALUE"] == $passport) {
-                $data["correct"] = 0;
+                $data["isCorrect"] = "N";
                 $data["message"] = Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_PASSPORT_ERROR');
                 return $data;
             }

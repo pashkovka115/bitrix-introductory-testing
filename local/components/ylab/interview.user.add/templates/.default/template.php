@@ -22,9 +22,8 @@ if (!empty($arResult['SUCCESS'])) {
 } else {
     ?>
 
-    <form class="form user_add_form" action="<?= $APPLICATION->GetCurPage() ?>" method="post">
+    <form id="user_add_form" class="form user_add_form" action="<?= $APPLICATION->GetCurPage() ?>" method="post">
         <?= bitrix_sessid_post() ?>
-        <input type="hidden" id="iblock_id" name="iblock_id" value="<?= $arResult['iblock_id'] ?>">
         <h3><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_FORM') ?></h3>
         <div class="user_add_form_row">
             <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_NAME') ?></label>
@@ -50,10 +49,27 @@ if (!empty($arResult['SUCCESS'])) {
             <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_PASSPORT') ?></label>
             <input id="passport" name="PASSPORT" type="text" value="" required>
         </div>
+        <script type="text/javascript">
+            BX.ready(function () {
+                BX.UserAddForm.create('user_add_form', {
+                    post: {
+                        passport: BX('passport').value,
+                        iblock_id: <?= CUtil::PHPToJsObject($arResult["iblock_id"])?>
+                    }
+                });
+            });
+            BX.bind(BX('passport'), 'input', function () {
+                if (this.value) {
+                    BX('btn__check_password').removeAttribute('disabled');
+                } else {
+                    BX('btn__check_password').setAttribute('disabled', true);
+                }
+            });
+        </script>
         <div class="user_add_form_row">
             <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_CHECK_PASSPORT') ?></label>
-            <input type="button" class="btn__check_password"
-                   value="<?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_CHECK_PASSPORT_BUTTON') ?>">
+            <input type="button" id="btn__check_password" class="btn__check_password"
+                   value="<?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_USER_ADD_CHECK_PASSPORT_BUTTON') ?>" disabled>
         </div>
         <div class="" id="btn__check_password_message"></div>
         <br><br>
