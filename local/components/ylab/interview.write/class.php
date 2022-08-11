@@ -8,14 +8,16 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
 
 use Bitrix\Main\Application;
 use Bitrix\Main\ArgumentNullException;
+use Bitrix\Main\Engine\Contract\Controllerable;
 use Bitrix\Main\HttpRequest;
+use Bitrix\Main\HttpResponse;
 use Bitrix\Main\Loader;
 use Bitrix\Main\SystemException;
 use Bitrix\Main\Type\DateTime;
 use CIBlockElement;
 
 
-class YlabInterviewWrite extends \CBitrixComponent
+class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
 {
     const FORMATE_DATE_TIME = 'd.m.Y H:i:s';
 
@@ -33,10 +35,10 @@ class YlabInterviewWrite extends \CBitrixComponent
 
     public function onPrepareComponentParams($params)
     {
-        if (isset($params['IBLOCK_TYPE']) && is_string($params['IBLOCK_TYPE']) && strlen($params['IBLOCK_TYPE']) > 0) {
-            $this->arParams['IBLOCK_TYPE'] = $params['IBLOCK_TYPE'];
-        } else {
-            throw new ArgumentNullException('IBLOCK_TYPE (Тип инфоблока)');
+        $request = Application::getInstance()->getContext()->getRequest();
+
+        if ($request->isAjaxRequest()) {
+            return;
         }
 
         // символьный код свойства
@@ -146,6 +148,63 @@ class YlabInterviewWrite extends \CBitrixComponent
 
 
     /**
+     * @param $slot_datetime - новое значение слота для юзера
+     * @param $user_id - для этого юзера
+     * @param $iblock_id - с каким инфоблоком работаем
+     * @param string $slot_datetime_name - символьный код свойства
+     * @param int $time_slot - продолжительность слота в минутах
+     * @param int $end_day - на сколько дней генерировать слоты
+     * @return
+     */
+    public function ajaxHandlerAction(
+        $slot_datetime,
+        $user_id,
+        $iblock_id,
+        $slot_datetime_name = 'SLOT_DATETIME',
+        $time_slot = 30,
+        $end_day = 2
+    )
+    {
+        $this->arParams['IBLOCK_ID'] = $iblock_id;
+        $this->arParams['SLOT_DATETIME'] = $slot_datetime_name;
+        $this->arParams['TIME_SLOT'] = $time_slot;
+        $this->arParams['END_DAY'] = $end_day;
+
+        try {
+            $response = new HttpResponse();
+            $response->addHeader('Content-Type', 'application/json');
+
+            CIBlockElement::SetPropertyValues(
+                $user_id, //  id пользователя из $_POST ($ELEMENT_ID)
+                $iblock_id,
+                $slot_datetime, // новое значение (слот времени) ($PROPERTY_VALUE)
+                $slot_datetime_name, // имя свойства из настроек компонента ($PROPERTY_CODE)
+            );
+
+            return json_encode([
+                'response' => 'ok'
+            ]);
+
+        }catch (\Exception $exception){
+            return json_encode([
+                'response' => 'error'
+            ]);
+        }
+
+    }
+
+
+    public function configureActions()
+    {
+        return [
+            'ajaxHandlerAction' => [ // Ajax-метод
+                'prefilters' => [],
+            ],
+        ];
+    }
+
+
+    /**
      * @return array
      * Получение всех элементов инфоблока.
      * В контексте этого компонента это пользователи
@@ -200,6 +259,7 @@ class YlabInterviewWrite extends \CBitrixComponent
                 }
                 // формируем масив слота для шаблона со служебной информацией
                 $item = [
+                    'IBLOCK_ID' => $this->arParams['IBLOCK_ID'],
                     'ELEMENT_ID' => $db_slot['ELEMENT_ID'],
                     'NAME' => $db_slot['NAME'],
                     'SLOT' => ['VALUE' => $slot, 'FREE' => $db_slot['FREE']],

@@ -26,7 +26,7 @@ use Bitrix\Main\Type\DateTime;
 $this->setFrameMode(true);
 
 ?>
-<div class="slots"> <?php
+<div id="slots" class="slots"> <?php
     foreach ($arResult['SLOTS'] as $day => $slots) {
         ?> <h3><?= $day ?></h3>
         <?php
@@ -39,9 +39,11 @@ $this->setFrameMode(true);
             } else {
                 $class = ' not-user';
             } ?>
-          <span <?php
-                if ($slot['SLOT']['FREE'] == 'N'){ ?>title="<?= $slot['NAME'] ?>" <?php
-          } ?>
+          <span data-slot="<?= $slot['SLOT']['VALUE'] ?>"
+                data-iblock="<?= $slot['IBLOCK_ID'] ?>"
+                data-element="<?= $slot['ELEMENT_ID'] ?>"
+                 <?php
+                if ($slot['SLOT']['FREE'] == 'N'){ ?>title="<?= $slot['NAME'] ?>" <?php } ?>
               class="slot<?= $class ?>"><?= (new DateTime($slot['SLOT']['VALUE']))->format('H:i') ?></span> <?php
         }
     }
@@ -89,7 +91,7 @@ if (isset($arResult['ERRORS']) && count($arResult['ERRORS']) > 0) { ?>
     <?php
     if (isset($arResult['USERS'])) { ?>
       <label><?= Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_BOOK_TO_TIME_FOR_USER') ?><br>
-        <select name="USER">
+        <select id="user" name="USER">
             <?php
             foreach ($arResult['USERS'] as $user) { ?>
               <option value="<?= $user['ID'] ?>"><?= $user['NAME'] ?></option>
