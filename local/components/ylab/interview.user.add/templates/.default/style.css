@@ -1,6 +1,9 @@
 .user_add_form_success{
     color: green;
 }
+.user_add_form_errors{
+    color: red;
+}
 .user_add_form_row{
     display: flex;
     margin-bottom:10px;

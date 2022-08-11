@@ -45,7 +45,7 @@ class y_interview_users2022080520220805062545 extends Version
   array (
     0 => 's1',
   ),
-  'CODE' => 'users',
+  'CODE' => 'ylab_interview_users',
   'API_CODE' => NULL,
   'REST_ON' => 'N',
   'NAME' => 'Пользователи',
@@ -586,6 +586,6 @@ class y_interview_users2022080520220805062545 extends Version
     public function down()
     {
         $helper = $this->getHelperManager();
-        $helper->Iblock()->deleteIblockIfExists('users');
+        $helper->Iblock()->deleteIblockIfExists('ylab_interview_users');
     }
 }
