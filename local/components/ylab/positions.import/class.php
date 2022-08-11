@@ -3,11 +3,9 @@
 namespace YLab\Components;
 
 use Bitrix\Highloadblock as HL;
-use Bitrix\Main\Localization\Loc;
 use Bitrix\Main\Loader;
 use Bitrix\Main\Application;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use \Exception;
 use \CBitrixComponent;
 
 
@@ -48,24 +46,10 @@ class PositionsImportComponent extends CBitrixComponent
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
             $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
         }
-
         if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-            $this->organizations_hlblock_name = $this->arParams['ORGANIZATIONS_HL_NAME'];
+            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
         }
 
-        // Очистка параметров POST
-        if (!isset($_SESSION)) {
-            session_start();
-        }
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_SESSION['postdata'] = $_POST;
-            unset($_POST);
-            header("Location: " . $_SERVER['PHP_SELF']);
-            exit;
-        }
-        if (array_key_exists('postdata', $_SESSION)) {
-            unset($_SESSION['postdata']);
-        }
 
         // Работа логики компонента
         if ($this->arResult['IS_HL_MODULE_INCLUDED'] &&
@@ -80,6 +64,20 @@ class PositionsImportComponent extends CBitrixComponent
                 $this->arResult['IS_RIGHT_FILE_EXTENSION'] = true;
                 $this->importOrganizationsDataFromExel();
                 $this->importPositionsDataFromExel();
+            }
+
+            // Очистка параметров POST
+            if (!isset($_SESSION)) {
+                session_start();
+            }
+            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+                $_SESSION['postdata'] = $_POST;
+                unset($_POST);
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit;
+            }
+            if (array_key_exists('postdata', $_SESSION)) {
+                unset($_SESSION['postdata']);
             }
         }
 
@@ -140,7 +138,10 @@ class PositionsImportComponent extends CBitrixComponent
             $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
         }
 
-        $fetchAll = $this->fetchAll($this->getEntityDataClass($hlblockId), array(), array('*'), array(), array(), array());
+        // Подготавливаем параметры для выборки из HL блока
+        $fetchHlParams = array('select' => ['*']);
+
+        $elements = $this->fetchAll($hlblockId, $fetchHlParams);
 
 
         // Если все поля из заголовка таблицы страницы xlsx есть в выбранном HL то пишем
@@ -159,13 +160,13 @@ class PositionsImportComponent extends CBitrixComponent
 
                 }
                 // Если запись из xlsx уже есть в HL то не пишем
-                foreach ($fetchAll as $element) {
+                foreach ($elements as $element) {
                     if ($rs['UF_COMPANY_INN_CODE'] == $element['UF_COMPANY_INN_CODE']) {
                         $writePermission = false;
                     }
                 }
                 if ($writePermission) {
-                    $this->addHLblockRecords($this->getEntityDataClass($hlblockId), $rs);
+                    $this->addHLblockRecords($hlblockId, $rs);
                 }
 
             }
@@ -228,9 +229,10 @@ class PositionsImportComponent extends CBitrixComponent
             $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
         }
 
+        // Подготавливаем параметры для выборки из HL блока
+        $fetchHlParams = array('select' => ['*']);
 
-        $fetchAll = $this->fetchAll($this->getEntityDataClass($hlblockId), array(), array('*'), array(), array(), array());
-
+        $elements = $this->fetchAll($hlblockId, $fetchHlParams);
 
         // Если все поля из заголовка таблицы страницы xlsx есть в выбранном HL то пишем
         if (empty(array_diff($positionsFieldCodes, array_intersect($positionsFieldCodes, $hlBlockFieldsNames)))) {
@@ -248,14 +250,14 @@ class PositionsImportComponent extends CBitrixComponent
 
                 }
                 // Если запись из xlsx уже есть в HL то не пишем
-                foreach ($fetchAll as $element) {
+                foreach ($elements as $element) {
                     if ($rs['UF_COMPANY_CODE'] == $element['UF_COMPANY_CODE'] &&
                       $rs['UF_POSITION_CODE'] == $element['UF_POSITION_CODE']) {
                         $writePermission = false;
                     }
                 }
                 if ($writePermission) {
-                    $this->addHLblockRecords($this->getEntityDataClass($hlblockId), $rs);
+                    $this->addHLblockRecords($hlblockId, $rs);
                 }
 
             }
@@ -303,13 +305,18 @@ class PositionsImportComponent extends CBitrixComponent
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
-    public static function isHlexist($hlblockId) : bool
+    public static function isHlexist($hlblockId): bool
     {
         $syteHlblockIds = [];
         $isHlexist = false;
 
         if (Loader::IncludeModule('highloadblock')) {
-            $hlblocksIds = HL\HighloadBlockTable::getList(['select' => array('ID')])->fetchAll();
+            $hlblocksIds = HL\HighloadBlockTable::getList([
+              'select' => array('ID'),
+              'cache' => [
+                'ttl' => 3600
+              ]
+            ])->fetchAll();
             foreach ($hlblocksIds as $hlblocksId) {
                 $syteHlblockIds[] = $hlblocksId['ID'];
             }
@@ -351,7 +358,7 @@ class PositionsImportComponent extends CBitrixComponent
 
 
     /**
-     * Выборка данных из HL по заданным параметрам
+     * Выборка данных из HL по параметрам выборки
      *
      * @param $entityDataClass
      * @param $filter
@@ -361,20 +368,27 @@ class PositionsImportComponent extends CBitrixComponent
      * @param $limit
      * @return mixed
      */
-    private function fetchAll($entityDataClass, $filter, $select, $order, $offset, $limit)
+    private function fetchAll($hlblockId, $fetchHlParams)
     {
-        return $entityDataClass::GetList([
-          'filter' => $filter,
+
+        $entityDataClass = $this->getEntityDataClass($hlblockId);
+
+        $defaultParams = array(
+          'filter' => array(),
           "count_total" => true,
-          'select' => $select,
-          'order' => $order,
-          "offset" => $offset,
-          "limit" => $limit,
+          'select' => array(),
+          'order' => array(),
+          "offset" => array(),
+          "limit" => array(),
           'cache' => array(
             'ttl' => 3600,
             'cache_joins' => false,
           )
-        ])->fetchAll();
+        );
+
+        $params = array_merge($defaultParams, $fetchHlParams);
+
+        return $entityDataClass::GetList($params)->fetchAll();
     }
 
 
@@ -383,22 +397,19 @@ class PositionsImportComponent extends CBitrixComponent
      *
      * @param $hlblockId
      * @return \Bitrix\Main\ORM\Data\DataManager|string|null
+     * @throws \Bitrix\Main\ArgumentException
      * @throws \Bitrix\Main\LoaderException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
      */
     private function getEntityDataClass($hlblockId)
     {
         $entityDataClass = null;
 
         if (Loader::IncludeModule('highloadblock')) {
-
-            try {
-                $hlblock = HL\HighloadBlockTable::getById($hlblockId)->fetch();
-                $entity = HL\HighloadBlockTable::compileEntity($hlblock);
-                $entityDataClass = $entity->getDataClass();
-            } catch (\Bitrix\Main\SystemException $e) {
-                echo 'Error - The HL block does not exist';
-                echo '<br>';
-            }
+            $hlblock = HL\HighloadBlockTable::getById($hlblockId)->fetch();
+            $entity = HL\HighloadBlockTable::compileEntity($hlblock);
+            $entityDataClass = $entity->getDataClass();
         }
 
         return $entityDataClass;
@@ -412,9 +423,10 @@ class PositionsImportComponent extends CBitrixComponent
      * @param $record
      * @throws \Bitrix\Main\LoaderException
      */
-    private function addHLblockRecords($entityDataClass, $record)
+    private function addHLblockRecords($hlblockId, $record)
     {
-        if (!is_null($entityDataClass) && Loader::IncludeModule('highloadblock')) {
+        if ( Loader::IncludeModule('highloadblock') && $this->isHlexist($hlblockId) ) {
+            $entityDataClass = $this->getEntityDataClass($hlblockId);
             $entityDataClass::add($record);
         }
     }
