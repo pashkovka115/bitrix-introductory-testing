@@ -82,21 +82,33 @@ class YlabTestingComponent extends CBitrixComponent{
             $this->arResult["NEW_QUESTIONS"] = 'n';
             $this->getListQuestion($this->getRandomId());
         }
-        else {
-            $this->arResult["NEW_QUESTIONS"] = 'y';
-            $listId = [];
-            foreach ($request as $key => $val) {
-                array_push($listId, $key);
-            }
-            $this->getListQuestion($listId);
-            $countTrueAnswer = 0;
-            foreach ($request as $key => $val) {
-                if ($this->arResult["QUESTION_LIST"][$key]["TRUE_ANSWER"] == $val){
-                    $countTrueAnswer += 1;
+        elseif ($request["newQuestions"] == 'n'){
+            $requestId = [];
+            $this->arResult["EMPTY_ANSWER"] = "n";
+            for ($i=1;$i<=$this->arParams["QUANTITY_QUESTIONS"];$i++){
+                array_push($requestId, $request["id{$i}"]);
+                if (empty($request[$request["id{$i}"]])){
+                    $this->arResult["EMPTY_ANSWER"] = "y";
+                }
+                else{
+                    $this->arResult["ANSWERS_USER"][$request["id{$i}"]] = $request[$request["id{$i}"]];
                 }
             }
-            $this->arResult["COUNT_TRUE_ANSWER"] = $countTrueAnswer;
-        };
+            if ($this->arResult["EMPTY_ANSWER"] == "y"){
+                $this->getListQuestion($requestId);
+            }
+            elseif ($this->arResult["EMPTY_ANSWER"] == "n"){
+                $this->arResult["NEW_QUESTIONS"] = 'y';
+                $this->getListQuestion($requestId);
+                $countTrueAnswer = 0;
+                foreach ($request as $key => $val) {
+                    if ($this->arResult["QUESTION_LIST"][$key]["TRUE_ANSWER"] == $val){
+                        $countTrueAnswer += 1;
+                    }
+                }
+                $this->arResult["COUNT_TRUE_ANSWER"] = $countTrueAnswer;
+            }
+        }
     }
 
     public function executeComponent()
