@@ -27,8 +27,8 @@ class PositionsListComponent extends CBitrixComponent
     /** @var string $positionsHlblockName Символьный код hl блока Должности */
     private string $positionsHlblockName;
 
-    /** @var string $organizations_hlblock_name Символьный код hl блока Организации */
-    private string $organizations_hlblock_name;
+    /** @var string $organizationsHlblockName Символьный код hl блока Организации */
+    private string $organizationsHlblockName;
 
     /**
      * Метод executeComponent
@@ -44,32 +44,30 @@ class PositionsListComponent extends CBitrixComponent
             $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
         } else {
             $this->arResult['IS_HL_MODULE_INCLUDED'] = false;
-            exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR1'));
         }
 
         // Инициализация параметров компонента
-
         $this->templateName = $this->GetTemplateName();
 
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
             $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
-        } else {
-            exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR2'));
         }
 
         if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-            $this->organizations_hlblock_name = $this->arParams['ORGANIZATIONS_HL_NAME'];
-        } else {
-            exit(Loc::getMessage('YLAB_POSITIONS_LIST_ERROR3'));
+            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
         }
 
+        if ($this->arResult['IS_HL_MODULE_INCLUDED'] &&
+          !empty($this->arParams['POSITIONS_HL_NAME']) &&
+          !empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
 
-        if ($this->templateName == 'grid') {
-            $this->showByGrid();
-        } else {
-            $this->arResult['ITEMS']['GRID_NAME'] = $this->getGridId();
-            $this->arResult['ITEMS']['GRID_HEAD'] = $this->getGridHead();
-            $this->arResult['ITEMS']['ELEMENTS'] = $this->getElements();
+            if ($this->templateName == 'grid') {
+                $this->showByGrid();
+            } else {
+                $this->arResult['ITEMS']['GRID_NAME'] = $this->getGridId();
+                $this->arResult['ITEMS']['GRID_HEAD'] = $this->getGridHead();
+                $this->arResult['ITEMS']['ELEMENTS'] = $this->getElements();
+            }
         }
 
 
@@ -90,7 +88,7 @@ class PositionsListComponent extends CBitrixComponent
         $result = [];
 
         $positionsHlblockId = $this->getHlBlockIdByName($this->positionsHlblockName);
-        $organizationsHlblockId = $this->getHlBlockIdByName($this->organizations_hlblock_name);
+        $organizationsHlblockId = $this->getHlBlockIdByName($this->organizationsHlblockName);
 
         $positionsDataClass = $this->getEntityDataClass($positionsHlblockId);
         $organizationsProgramDataClass = $this->getEntityDataClass($organizationsHlblockId);
@@ -386,8 +384,7 @@ class PositionsListComponent extends CBitrixComponent
     public static function getEntityDataClass($hlblockId)
     {
 
-        if (empty($hlblockId) || $hlblockId < 1)
-        {
+        if (empty($hlblockId) || $hlblockId < 1) {
             return false;
         }
 

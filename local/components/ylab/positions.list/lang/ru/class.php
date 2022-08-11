@@ -3,6 +3,3 @@ $MESS['YLAB_POSITIONS_LIST_POSITION_NAME'] = "Должность компани�
 $MESS['YLAB_POSITIONS_LIST_ORGANIZATION_NAME'] = "Название компании";
 $MESS['YLAB_POSITIONS_LIST_ORGANIZATION_ADDRESS'] = "Адрес компании";
 $MESS['YLAB_POSITIONS_LIST_ORGANIZATION_INN_CODE'] = "ИНН компании";
-$MESS['YLAB_POSITIONS_LIST_ERROR1'] = 'Модуль highloadblock не загружен';
-$MESS['YLAB_POSITIONS_LIST_ERROR2'] = 'Параметр POSITIONS_HL_NAME не указан';
-$MESS['YLAB_POSITIONS_LIST_ERROR3'] = 'Параметр ORGANIZATIONS_HL_NAME не указан';

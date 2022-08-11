@@ -38,32 +38,19 @@ class PositionsImportComponent extends CBitrixComponent
     {
 
         // Проверка на подключение модуля highloadblock
-        if (!Loader::IncludeModule('highloadblock')) {
-            exit(Loc::getMessage('YLAB_POSITIONS_IMPORT_ERROR1'));
+        if (Loader::IncludeModule('highloadblock')) {
+            $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
+        } else {
+            $this->arResult['IS_HL_MODULE_INCLUDED'] = false;
         }
 
         // Инициализация параметров компонента
-
         if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
             $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
-        } else {
-            exit(Loc::getMessage('YLAB_POSITIONS_IMPORT_ERROR2'));
         }
 
         if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
-        } else {
-            exit(Loc::getMessage('YLAB_POSITIONS_IMPORT_ERROR3'));
-        }
-
-        $request = Application::getInstance()->getContext()->getRequest();
-
-        $action = $request->get('action');
-
-        if ($action == "import_xlsx") {
-            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = true;
-            $this->importOrganizationsDataFromExel();
-            $this->importPositionsDataFromExel();
+            $this->organizations_hlblock_name = $this->arParams['ORGANIZATIONS_HL_NAME'];
         }
 
         // Очистка параметров POST
@@ -73,11 +60,27 @@ class PositionsImportComponent extends CBitrixComponent
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['postdata'] = $_POST;
             unset($_POST);
-            header("Location: ".$_SERVER['PHP_SELF']);
+            header("Location: " . $_SERVER['PHP_SELF']);
             exit;
         }
         if (array_key_exists('postdata', $_SESSION)) {
             unset($_SESSION['postdata']);
+        }
+
+        // Работа логики компонента
+        if ($this->arResult['IS_HL_MODULE_INCLUDED'] &&
+          !empty($this->arParams['POSITIONS_HL_NAME']) &&
+          !empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
+
+            $request = Application::getInstance()->getContext()->getRequest();
+
+            $action = $request->get('action');
+
+            if ($action == "import_xlsx") {
+                $this->arResult['IS_RIGHT_FILE_EXTENSION'] = true;
+                $this->importOrganizationsDataFromExel();
+                $this->importPositionsDataFromExel();
+            }
         }
 
 
