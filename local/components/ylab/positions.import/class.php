@@ -136,7 +136,7 @@ class PositionsImportComponent extends CBitrixComponent
         $hlblockId = $this->getHlBlockIdByName($this->organizationsHlblockName);
         $hlBlockFieldsNames = [];
 
-        if (in_array($hlblockId, $this->getSyteHlblockIds())) {
+        if ($this->isHlexist($hlblockId)) {
             $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
         }
 
@@ -224,7 +224,7 @@ class PositionsImportComponent extends CBitrixComponent
         $hlblockId = $this->getHlBlockIdByName($this->positionsHlblockName);
         $hlBlockFieldsNames = [];
 
-        if (in_array($hlblockId, $this->getSyteHlblockIds())) {
+        if ($this->isHlexist($hlblockId)) {
             $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
         }
 
@@ -297,17 +297,19 @@ class PositionsImportComponent extends CBitrixComponent
 
 
     /**
-     * Возврашает массив с ID всех HL блоков на сайте
+     * Метод проверяет существует ли HL в системе
      *
-     * @return array
+     * @param $hlblockId
+     * @return bool
      * @throws \Bitrix\Main\ArgumentException
      * @throws \Bitrix\Main\LoaderException
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
-    public static function getSyteHlblockIds()
+    public static function isHlexist($hlblockId) : bool
     {
         $syteHlblockIds = [];
+        $isHlexist = false;
 
         if (Loader::IncludeModule('highloadblock')) {
             $hlblocksIds = HL\HighloadBlockTable::getList(['select' => array('ID')])->fetchAll();
@@ -315,7 +317,11 @@ class PositionsImportComponent extends CBitrixComponent
                 $syteHlblockIds[] = $hlblocksId['ID'];
             }
         }
-        return $syteHlblockIds;
+
+        if (in_array($hlblockId, $syteHlblockIds)) {
+            $isHlexist = true;
+        }
+        return $isHlexist;
     }
 
 
