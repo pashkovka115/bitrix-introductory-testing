@@ -55,9 +55,14 @@ if ($componentPage == 'view') {
     while ($property = $propertiesDB->GetNext()) {
         $arLessonData[$property['CODE']] = $property['VALUE'];
     }
-    $arResult['LESSON_DATA'] = $arLessonData;
 
+    $arResult['LESSON_DATA'] = $arLessonData;
 }
+
+if ($componentPage == 'edit') {
+    // оставлено до стыковки с кэшированными вопросами/ответами
+}
+
 if ($componentPage == 'list') {
 
     $userID = $USER->GetID();
