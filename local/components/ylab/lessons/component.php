@@ -15,6 +15,12 @@ $iblockId = \Bitrix\Iblock\IblockTable::getList(['filter' => ['CODE' => 'YLAB_LE
 
 $hlbl = Hl\HighloadBlockTable::getList(['filter' => ['NAME' => 'ProgressPerLessons']])->fetch()['ID'];
 
+$hlblock = HL\HighloadBlockTable::getById($hlbl)->fetch();
+$entity = HL\HighloadBlockTable::compileEntity($hlblock);
+$entity_data_class = $entity->getDataClass();
+
+$userID = $USER->GetID();
+
 $arDefaultUrlTemplates404 = array(
     'list' => '',
     'view' => 'LESSON_ID#/',
@@ -42,16 +48,31 @@ if ($arParams["SEF_MODE"] == "Y") {
     CComponentEngine::initComponentVariables($componentPage, $arComponentVariables, $arDefaultVariableAliases, $arVariables);
 }
 if ($componentPage == 'view') {
-    $LessonID = $arVariables['ELEMENT_ID'];
+
+    $lessonID = $arVariables['LESSON_ID'];
+
     $arLessonData = \Bitrix\Iblock\ElementTable::getList([
         'select' => ['ID', 'NAME'],
         'filter' => [
             'IBLOCK_ID' => $iblockId,
-            'ID' => $LessonID,
+            'ID' => $lessonID,
         ]
     ])->fetch();
 
-    $propertiesDB = CIBlockElement::GetProperty($iblockId, $LessonID);
+    $hlData = $entity_data_class::getList([
+        "select" => [
+            'UF_COMPLETE',
+        ],
+        "filter" => [
+            'UF_USER_ID' => $userID,
+            'UF_LESSON_ID' => $lessonID
+        ],
+
+    ])->fetch();
+
+    $arLessonData['IS_COMPLETED'] = $hlData['UF_COMPLETE'] == '1';
+
+    $propertiesDB = CIBlockElement::GetProperty($iblockId, $lessonID);
     while ($property = $propertiesDB->GetNext()) {
         $arLessonData[$property['CODE']] = $property['VALUE'];
     }
@@ -60,78 +81,85 @@ if ($componentPage == 'view') {
 }
 
 if ($componentPage == 'edit') {
-    // оставлено до стыковки с кэшированными вопросами/ответами
+
+    $lessonID = $arVariables['LESSON_ID'];
+
+    $arLessonData = \Bitrix\Iblock\ElementTable::getList([
+        'select' => ['ID', 'NAME'],
+        'filter' => [
+            'IBLOCK_ID' => $iblockId,
+            'ID' => $lessonID,
+        ]
+    ])->fetch();
+
+    $hlData = $entity_data_class::getList([
+        "select" => [
+            'ID',
+            'UF_COMPLETE',
+        ],
+        "filter" => [
+            'UF_USER_ID' => $userID,
+            'UF_LESSON_ID' => $lessonID
+        ],
+
+    ])->fetch();
+
+    $arLessonData['IS_COMPLETED'] = $hlData['UF_COMPLETE'] == '1';
+    $arResult['LESSON_DATA'] = $arLessonData;
+
+    $request = Bitrix\Main\Application::getInstance()->getContext()->getRequest();
+    if (($lessonID) && ($request->getPost('option'))) {
+        $entity_data_class::update($hlData['ID'], ['UF_COMPLETE' => '1']);
+    }
 }
 
 if ($componentPage == 'list') {
 
-    $userID = $USER->GetID();
-
-    $hlblock = HL\HighloadBlockTable::getById($hlbl)->fetch();
-    $entity = HL\HighloadBlockTable::compileEntity($hlblock);
-    $entity_data_class = $entity->getDataClass();
-
-    $rsData = $entity_data_class::getList(array(
+    $hlData = $entity_data_class::getList([
         "select" => [
             'UF_LESSON_ID',
             'UF_COMPLETE',
         ],
-        "filter" => array("UF_USER_ID" => $userID),
+        "filter" => ['UF_USER_ID' => $userID],
 
-    ));
+    ])->fetchAll();
 
-    $hlData = $rsData->fetchAll();
+    $arAllActiveIbItems = \Bitrix\Iblock\ElementTable::getList([
+        'select' => ['ID', 'NAME'],
+        'filter' => [
+            'IBLOCK_ID' => $iblockId,
+            'ACTIVE' => true,
+        ]
+    ])->fetchAll();
 
-    $completedLessons = [];
 
+    $arCompletedL = [];
+    $arUncompleted = [];
     foreach ($hlData as $hlDatum) {
-        if ($hlDatum['UF_COMPLETE'] == 1) {
-            $completedLessons[] = $hlDatum['UF_LESSON_ID'];
-        }
-    }
-
-    foreach ($hlData as $hlDatum) {
-        $arIbItems[] = \Bitrix\Iblock\ElementTable::getList([
-            'select' => ['ID', 'NAME'],
-            'filter' => [
-                'IBLOCK_ID' => $iblockId,
-                'ID' => $hlDatum['UF_LESSON_ID']
-            ]
-        ])->fetch();
-    }
-
-    foreach ($arIbItems as $key => $arIbItem) {
-        foreach ($completedLessons as $completedLesson) {
-            if ($arIbItem['ID'] == $completedLesson) {
-                $arIbItems[$key]['IS_COMPLETED'] = true;
+        foreach ($arAllActiveIbItems as $key => $ibItem) {
+            if (!array_diff($hlDatum, $ibItem)['UF_LESSON_ID']) {
+                if ($hlDatum['UF_COMPLETE'] == '1') {
+                    $arCompletedL[$key] = $ibItem;
+                    $arCompletedL[$key]['IS_COMPLETED'] = true;
+                } else {
+                    $arUncompleted[$key] = $ibItem;
+                    $arUncompleted[$key]['IS_COMPLETED'] = false;
+                }
             }
         }
     }
-    foreach ($arIbItems as $key => $arIbItem) {
-        if (!$arIbItems[$key]['IS_COMPLETED']) {
-            $arIbItems[$key]['IS_COMPLETED'] = false;
-        }
-    }
+    $arSortedLessons = array_merge($arUncompleted, $arCompletedL);
 
-    foreach ($arIbItems as $key => $arIbItem) {
-        $propertiesDB = CIBlockElement::GetProperty($iblockId, $arIbItem['ID']);
-        while ($property = $propertiesDB->GetNext()) {
-            if ($property['CODE'] == 'IMAGE') {
-                $arIbItems[$key][$property['CODE']] = $property['VALUE'];
+    CIBlockElement::GetPropertyValuesArray($arAllLessonsImages, $iblockId, [], ['CODE' => 'IMAGE']);
+
+    foreach ($arSortedLessons as $kLesson => $lesson) {
+        foreach ($arAllLessonsImages as $kImage => $image) {
+            if ($lesson['ID'] == $kImage) {
+                $arSortedLessons[$kLesson]['IMAGE'] = $image['IMAGE']['VALUE'];
             }
         }
     }
 
-    $arIbItemsSortCompleted = [];
-    $arIbItemsSortUnCompleted = [];
-    foreach ($arIbItems as $arIbItem) {
-        if ($arIbItem['IS_COMPLETED']) {
-            $arIbItemsSortCompleted[] = $arIbItem;
-        } else {
-            $arIbItemsSortUnCompleted[] = $arIbItem;
-        }
-    }
-
-    $arResult['LESSONS'] = array_merge($arIbItemsSortUnCompleted, $arIbItemsSortCompleted);
+    $arResult['LESSONS'] = array_merge($arSortedLessons);
 }
 $this->IncludeComponentTemplate($componentPage);

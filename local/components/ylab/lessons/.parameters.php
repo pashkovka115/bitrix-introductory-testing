@@ -22,12 +22,12 @@ $arComponentParameters = array(
             ),
             "view" => array(
                 "NAME" => Loc::getMessage("T_IBLOCK_SEF_PAGE_DETAIL"),
-                "DEFAULT" => "#LESSON_ID#/",
+                "DEFAULT" => "view/#LESSON_ID#/",
                 "VARIABLES" => array("ELEMENT_ID", "SECTION_ID"),
             ),
             "edit" => array(
                 "NAME" => Loc::getMessage("T_IBLOCK_SEF_PAGE_EDIT"),
-                "DEFAULT" => "#LESSON_ID#/edit/",
+                "DEFAULT" => "edit/#LESSON_ID#/",
                 "VARIABLES" => array("ELEMENT_ID", "SECTION_ID"),
             ),
         ),

@@ -17,8 +17,9 @@ foreach ($arResult['LESSONS'] as $arItem) {
     </p>
     <img src="<?= CFile::GetFileArray($arItem['IMAGE'])['SRC'] ?>" width="200" height="150" alt="<?= '213123' ?>"/>
     <p class="lessons-list" id="">
-        <?= $arItem['IS_COMPLETED'] ? 'Курс не пройден' : 'Курс пройден' ?>
+        <?= $arItem['IS_COMPLETED'] ? 'Курс пройден' : 'Курс не пройден' ?>
     </p>
+    <a href="/lessons/view/<?= $arItem['ID'] ?>/"><?= Loc::getMessage('DETAILS') ?></a>
     <hr>
     </div>
 <?php } ?>

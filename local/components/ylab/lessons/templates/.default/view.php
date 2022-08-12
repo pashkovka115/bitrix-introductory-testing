@@ -19,8 +19,10 @@ if (isset($arResult['LESSON_DATA']['ID'])) {
     <p class="lesson-data" id="">
         Описание: <?= $arResult['LESSON_DATA']['DESCRIPTION'] ?>
     </p>
-    <button type="submit"><?= Loc::getMessage('START_TEST') ?></button>
-    </div>
-<?php } else {
+    <?php if (!$arResult['LESSON_DATA']['IS_COMPLETED']) { ?>
+        <a href="/lessons/edit/<?= $arResult['LESSON_DATA']['ID'] ?>/"><?= Loc::getMessage('START_TEST') ?></a>
+        </div>
+    <?php }
+} else {
     echo Loc::getMessage('LESSON_NOT_FOUND');
 } ?>
