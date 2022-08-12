@@ -26,7 +26,7 @@ use Bitrix\Main\Type\DateTime;
 $this->setFrameMode(true);
 
 ?>
-<div id="slots" class="slots"> <?php
+<div id="slots_interview.write" class="slots"> <?php
     foreach ($arResult['SLOTS'] as $day => $slots) {
         ?> <h3><?= $day ?></h3>
         <?php
@@ -41,9 +41,12 @@ $this->setFrameMode(true);
             } ?>
           <span data-slot="<?= $slot['SLOT']['VALUE'] ?>"
                 data-iblock="<?= $slot['IBLOCK_ID'] ?>"
-                data-element="<?= $slot['ELEMENT_ID'] ?>"
                  <?php
-                if ($slot['SLOT']['FREE'] == 'N'){ ?>title="<?= $slot['NAME'] ?>" <?php } ?>
+                 if ($slot['SLOT']['FREE'] == 'N') { ?>
+                   title="<?= $slot['NAME'] ?>"
+                   data-element="<?= $slot['ELEMENT_ID'] ?>"
+                     <?php
+                 } ?>
               class="slot<?= $class ?>"><?= (new DateTime($slot['SLOT']['VALUE']))->format('H:i') ?></span> <?php
         }
     }
@@ -56,11 +59,11 @@ if (isset($arResult['ERRORS']) && count($arResult['ERRORS']) > 0) { ?>
         <?php
         foreach ($arResult['ERRORS'] as $error) { ?>
           <li><?= $error ?></li>
-        <?php
+            <?php
         } ?>
     </ul>
   </div>
-<?php
+    <?php
 } ?>
 <form class="form" action="<?= $APPLICATION->GetCurPage() ?>" method="post">
     <?= bitrix_sessid_post() ?>
@@ -85,7 +88,7 @@ if (isset($arResult['ERRORS']) && count($arResult['ERRORS']) > 0) { ?>
             }
             ?></select>
       </label>
-    <?php
+        <?php
     } ?>
   <br><br>
     <?php
@@ -95,13 +98,20 @@ if (isset($arResult['ERRORS']) && count($arResult['ERRORS']) > 0) { ?>
             <?php
             foreach ($arResult['USERS'] as $user) { ?>
               <option value="<?= $user['ID'] ?>"><?= $user['NAME'] ?></option>
-            <?php
+                <?php
             } ?>
         </select>
       </label><br><br>
-    <?php
+        <?php
     } ?>
   <input type="submit" value="Забронировать">
 </form>
 
+<script>
+    BX.ready(function () {
+        BX.YlabSlots.create('slots_interview.write', {
+            users: <?= CUtil::PHPToJsObject($arResult['USERS'])?>
+        });
+    });
+</script>
 
