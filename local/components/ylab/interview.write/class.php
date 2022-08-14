@@ -77,14 +77,7 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
         $this->arResult['ERRORS'] = [];
 
         if ($this->checkModules()) {
-            $request = Application::getInstance()->getContext()->getRequest();
-
-            if ($request->isPost()) {
-                $this->handlerPost($request);
-            }
-
             $this->handler();
-
             $this->includeComponentTemplate();
         } else {
             $this->arResult['ERRORS'][] = 'Не загрузились необходимые модули для работы компонента';
@@ -108,46 +101,6 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
 
 
     /**
-     * @param HttpRequest $request
-     * обработка POST запроса из формы
-     */
-    public function handlerPost(HttpRequest $request)
-    {
-        $input_data = $request->toArray();
-
-        if (!isset($input_data['USER']) and !(($input_data['USER'] * 1) > 0)) {
-            $this->arResult['ERRORS'][] = 'Не указан пользователь';
-
-            return;
-        }
-
-        if (isset($input_data['SLOT_DATETIME'])) {
-            try {
-                $time = (new DateTime($input_data['SLOT_DATETIME']))->format(self::FORMATE_DATE_TIME);
-            } catch (SystemException $e) {
-                $this->arResult['ERRORS'][] = 'Неправильный формат даты. ' . $e->getMessage();
-
-                return;
-            }
-        } else {
-            $this->arResult['ERRORS'][] = 'Не указано время';
-
-            return;
-        }
-
-        if (check_bitrix_sessid()) {
-            CIBlockElement::SetPropertyValues(
-                $input_data['USER'], //  id пользователя из $_POST ($ELEMENT_ID)
-                $this->arParams['IBLOCK_ID'],
-                $time, // новое значение (слот времени) ($PROPERTY_VALUE)
-                $this->arParams['SLOT_DATETIME'], // имя свойства из настроек компонента ($PROPERTY_CODE)
-            );
-        }
-
-    }
-
-
-    /**
      * @param $slot_datetime - новое значение слота для юзера
      * @param $user_id - для этого юзера
      * @param $iblock_id - с каким инфоблоком работаем
@@ -160,7 +113,7 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
         $slot_datetime,
         $user_id,
         $iblock_id,
-        $slot_datetime_name = 'SLOT_DATETIME',
+        $slot_datetime_name = 'LIST_SLOT_DATETIME',
         $time_slot = 30,
         $end_day = 2
     )
@@ -171,18 +124,19 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
         $this->arParams['END_DAY'] = $end_day;
 
         try {
-            $response = new HttpResponse();
-            $response->addHeader('Content-Type', 'application/json');
-
-            CIBlockElement::SetPropertyValues(
+            // если надо сохранить пустое значение необходимо передать false
+            if ($slot_datetime == ''){
+                $slot_datetime = false;
+            }
+            CIBlockElement::SetPropertyValuesEx(
                 $user_id, //  id пользователя из $_POST ($ELEMENT_ID)
                 $iblock_id,
-                $slot_datetime, // новое значение (слот времени) ($PROPERTY_VALUE)
+                [$slot_datetime_name => $slot_datetime], // новое значение (слот времени) ($PROPERTY_VALUE)
                 $slot_datetime_name, // имя свойства из настроек компонента ($PROPERTY_CODE)
             );
 
             return json_encode([
-                'response' => 'ok'
+                'response' => 'ok',
             ]);
 
         }catch (\Exception $exception){
@@ -249,23 +203,29 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
                 // проходим по массиву из БД
                 // и сверяем каждый слот с элементом массива из БД
                 foreach ($db_slots as $db_slot) {
-
                     $db_slot['FREE'] = 'Y';
-                    // если сгенерированный слот равен слоту из БД помечаем его. пригодится в шаблоне
-                    if ($slot == $db_slot['VALUE']) {
-                        $db_slot['FREE'] = 'N';
+                    // если сгенерированный слот есть в слотах из БД помечаем его. пригодится в шаблоне
+                    // формируем масив слота для шаблона со служебной информацией
+                    if (is_array($db_slot['VALUE']) && in_array($slot, $db_slot['VALUE'])){
+                        $item = [
+                            'IBLOCK_ID' => $this->arParams['IBLOCK_ID'],
+                            'ELEMENT_ID' => $db_slot['ELEMENT_ID'],
+                            'PROPERTY_ID' => $db_slot['PROPERTY_ID'],
+                            'NAME' => $db_slot['NAME'],
+                            'SLOT' => ['VALUE' => $slot, 'FREE' => 'N'],
+                        ];
                         break;
+                    }else{
+                        $item = [
+                            'IBLOCK_ID' => $this->arParams['IBLOCK_ID'],
+                            'ELEMENT_ID' => '',
+                            'PROPERTY_ID' => '',
+                            'NAME' => '',
+                            'SLOT' => ['VALUE' => $slot, 'FREE' => 'Y'],
+                        ];
                     }
                 }
-                // формируем масив слота для шаблона со служебной информацией
-                $item = [
-                    'IBLOCK_ID' => $this->arParams['IBLOCK_ID'],
-                    'ELEMENT_ID' => $db_slot['ELEMENT_ID'],
-                    'NAME' => $db_slot['NAME'],
-                    'SLOT' => ['VALUE' => $slot, 'FREE' => $db_slot['FREE']],
-                ];
                 $view_slots[$day][] = $item;
-
             }
         }
 
@@ -288,7 +248,7 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
         ],
             false,
             false,
-            ['ID', 'NAME']);
+        );
 
         while ($ob = $res->GetNextElement()) {
             $fields = $ob->GetFields();
@@ -305,9 +265,11 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
         foreach ($props as $element_id => $prop) {
             foreach ($db_slots as $key => $item) {
                 if ($item['ELEMENT_ID'] == $element_id) {
-                    $db_slots[$key]['VALUE'] = (new DateTime($prop[$this->arParams['SLOT_DATETIME']]['VALUE']))
-                        ->format(self::FORMATE_DATE_TIME);
-                    break;
+                    if (is_array($prop[$this->arParams['SLOT_DATETIME']]['VALUE'])){
+                        $db_slots[$key]['VALUE'] = $prop[$this->arParams['SLOT_DATETIME']]['VALUE'];
+                        $db_slots[$key]['PROPERTY_ID'] = $prop[$this->arParams['SLOT_DATETIME']]['ID'];
+                        break;
+                    }
                 }
             }
         }

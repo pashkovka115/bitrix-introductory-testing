@@ -13,6 +13,20 @@ if (typeof (BX.YlabSlots) === 'undefined') {
         getId: function () {
             return this._id;
         },
+        resetStyles: function (old_slots) {
+            old_slots.forEach(function (old_el) {
+                if (old_el.classList.contains('busy')) {
+                    old_el.classList.remove('busy');
+                }
+                old_el.classList.add('free');
+                if (old_el.hasAttribute('data-element')) {
+                    old_el.removeAttribute('data-element');
+                }
+                if (old_el.hasAttribute('title')) {
+                    old_el.removeAttribute('title');
+                }
+            });
+        },
         _getElement: function (e) {
             if (e.target.tagName === 'SPAN' &&
                 e.target.classList.contains('slot') &&
@@ -30,10 +44,7 @@ if (typeof (BX.YlabSlots) === 'undefined') {
                 let post = {};
                 post.slots_id = this._id;
                 post.iblock_id = el.dataset.iblock;
-                post.slot_datetime = el.dataset.slot;
-                // slot_datetime_name - символьный код свойства (SLOT_DATETIME)
-                // time_slot - продолжительность слота в минутах (30)
-                // end_day - на сколько дней генерировать слоты (2)
+                post.selected_slot = el.dataset.slot;
 
                 let options = '';
                 for (let i = 0; i < this.params.users.length; i++) {
@@ -41,40 +52,42 @@ if (typeof (BX.YlabSlots) === 'undefined') {
                 }
 
                 const messageBox = BX.UI.Dialogs.MessageBox.confirm(
-                    '<div class="select_users_wrap">' +
-                    'Пользователя <select id="user_' + post.iblock_id + '" name="USER">' + options + '</select> ' +
-                    'записать на <div id="selected_slot">' + post.slot_datetime + '</div>' +
+                    '<div id="select_users_wrap" class="select_users_wrap">' +
+                    'Пользователя<br> <select id="user_' + post.iblock_id + '" name="USER">' + options + '</select> <br><br>' +
+                    'записать на <div><select id="selected_slot"><option value="">Сбросить время</option> '
+                    + '<option value="' + post.selected_slot + '" selected>' + post.selected_slot + '</option> </select></div>' +
                     '</div>',
-                    function (messageBox, $this, $my) {
+                    function (messageBox) {
                         let user = BX('user_' + post.iblock_id);
                         post.user_id = user.value;
                         post.user_name = user[user.selectedIndex].text;
+                        let arrPostSlots = [];
+                        let old_slots = document.querySelectorAll('span[data-element="' + post.user_id + '"]');
+                        for (let i = 0; i < old_slots.length; i++) {
+                            arrPostSlots.push(old_slots[i].dataset.slot);
+                        }
+                        let selectedSlot = BX('selected_slot').value;
+                        if (selectedSlot === '') {
+                            arrPostSlots = '';
+                        } else {
+                            arrPostSlots.push(post.selected_slot);
+                        }
+                        post.slot_datetime = arrPostSlots;
+                        BX('select_users_wrap').innerText = 'Идёт запись...';
 
                         BX.ajax.runComponentAction('ylab:interview.write', 'ajaxHandler', {
                             mode: 'class',
                             data: post
                         }).then(function (response) {
-                            let old_slot = document.querySelector('span[data-element="' + post.user_id + '"]');
-
-                            if (old_slot.classList.contains('busy')) {
-                                old_slot.classList.remove('busy');
+                            console.log('response:', response)
+                            // если сбрасываем время
+                            if (selectedSlot === '') {
+                                BX.YlabSlots.prototype.resetStyles(old_slots);
+                            } else {
+                                el.classList.add('busy');
+                                el.setAttribute('data-element', post.user_id);
+                                el.setAttribute('title', post.user_name);
                             }
-                            old_slot.classList.add('free');
-                            if (old_slot.hasAttribute('data-element')) {
-                                old_slot.removeAttribute('data-element');
-                            }
-                            if (old_slot.hasAttribute('title')) {
-                                old_slot.removeAttribute('title');
-                            }
-
-
-                            if (el.classList.contains('free')) {
-                                el.classList.remove('free');
-                            }
-                            el.classList.add('busy');
-                            el.setAttribute('data-element', post.user_id);
-                            el.setAttribute('title', post.user_name);
-
 
                             messageBox.close();
                         }, function (response) {

@@ -6,9 +6,9 @@ $APPLICATION->SetTitle("Новая страница");
 	"",
 	Array(
 		"END_DAY" => "3",
-		"IBLOCK_ID" => "16",
-		"IBLOCK_TYPE" => "users",
-		"SLOT_DATETIME" => "SLOT_DATETIME",
+		"IBLOCK_ID" => "17",
+		"IBLOCK_TYPE" => "lists",
+		"SLOT_DATETIME" => "LIST_SLOT_DATETIME",
 		"TIME_SLOT" => "30"
 	)
 );?><?
