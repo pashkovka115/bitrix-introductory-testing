@@ -37,3 +37,7 @@ input[type="submit"]{
 .errors ul li{
     margin-bottom: 5px;
 }
+.select_users_wrap{
+    color: blue;
+    font-size: 16px;
+}

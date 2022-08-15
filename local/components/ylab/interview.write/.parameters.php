@@ -70,7 +70,7 @@ $arComponentParameters = [
             'PARENT' => 'SETTINGS',
             'NAME' => Loc::getMessage('YLAB_INTERVIEW_TEMPLATE_SLOT_DATETIME'),
             'TYPE' => 'STRING',
-            'DEFAULT' => 'SLOT_DATETIME',
+            'DEFAULT' => 'LIST_SLOT_DATETIME',
         ],
     ]
 ];
