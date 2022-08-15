@@ -10,7 +10,7 @@ use Bitrix\Main\Engine\ActionFilter;
 use Ylab\ChunkReadFilter;
 
 /**
- * Компонент импорта Организаций и должностей
+ * Компонент импорта Организаций и Должностей
  *
  * Class PositionsImportComponent
  * @package YLab\Components
