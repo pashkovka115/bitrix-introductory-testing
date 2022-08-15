@@ -152,9 +152,15 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
     public function configureActions()
     {
         return [
-            'ajaxHandler' => [ // Ajax-метод
+            'ajaxHandler' => [
                 'prefilters' => [
-                    new ActionFilter\Authentication()
+                    new ActionFilter\Authentication(),
+                    new ActionFilter\HttpMethod([
+                        ActionFilter\HttpMethod::METHOD_POST
+                    ]),
+                    new ActionFilter\Csrf(),
+                    new ActionFilter\Scope(ActionFilter\Scope::AJAX),
+                    new ActionFilter\ContentType(['application/x-www-form-urlencoded'])
                 ],
             ],
         ];
