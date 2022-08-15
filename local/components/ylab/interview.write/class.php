@@ -15,6 +15,7 @@ use Bitrix\Main\Loader;
 use Bitrix\Main\SystemException;
 use Bitrix\Main\Type\DateTime;
 use CIBlockElement;
+use Bitrix\Main\Engine\ActionFilter;
 
 
 class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
@@ -151,8 +152,10 @@ class YlabInterviewWrite extends \CBitrixComponent implements Controllerable
     public function configureActions()
     {
         return [
-            'ajaxHandlerAction' => [ // Ajax-метод
-                'prefilters' => [],
+            'ajaxHandler' => [ // Ajax-метод
+                'prefilters' => [
+                    new ActionFilter\Authentication()
+                ],
             ],
         ];
     }
