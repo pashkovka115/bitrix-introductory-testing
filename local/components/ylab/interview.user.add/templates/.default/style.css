@@ -1,0 +1,24 @@
+.user_add_form_success{
+    color: green;
+}
+.user_add_form_errors{
+    color: red;
+}
+.user_add_form_row{
+    display: flex;
+    margin-bottom:10px;
+}
+.user_add_form label{
+    width:20%;
+}
+.user_add_form input{
+    width:30%;
+}
+input[type="submit"]{
+    color: green;
+    padding: 5px 10px;
+    border-radius: 3px;
+    background-color: white;
+    border: solid 1px green;
+    width:51%;
+}
