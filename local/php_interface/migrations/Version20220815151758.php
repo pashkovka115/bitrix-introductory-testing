@@ -3,9 +3,9 @@
 namespace Sprint\Migration;
 
 
-class Version20220807191218 extends Version
+class Version20220815151758 extends Version
 {
-    protected $description = "Миграция для HL Organizations";
+    protected $description = "Миграция для HL Positions ";
 
     protected $moduleVersion = "4.1.1";
 
@@ -17,54 +17,54 @@ class Version20220807191218 extends Version
     {
         $helper = $this->getHelperManager();
         $hlblockId = $helper->Hlblock()->saveHlblock(array (
-  'NAME' => 'Organizations',
-  'TABLE_NAME' => 'y_hl_organizations',
+  'NAME' => 'Positions',
+  'TABLE_NAME' => 'y_hl_positions',
   'LANG' => 
   array (
     'ru' => 
     array (
-      'NAME' => 'Организации',
+      'NAME' => 'Должности',
     ),
     'en' => 
     array (
-      'NAME' => 'Organizations',
+      'NAME' => 'Positions',
     ),
   ),
 ));
         $helper->Hlblock()->saveField($hlblockId, array (
-  'FIELD_NAME' => 'UF_COMPANY_NAME',
+  'FIELD_NAME' => 'UF_POSITION_NAME',
   'USER_TYPE_ID' => 'string',
-  'XML_ID' => 'COMPANY_NAME',
+  'XML_ID' => 'POSITION_NAME',
   'SORT' => '100',
   'MULTIPLE' => 'N',
-  'MANDATORY' => 'N',
+  'MANDATORY' => 'Y',
   'SHOW_FILTER' => 'S',
   'SHOW_IN_LIST' => 'Y',
   'EDIT_IN_LIST' => 'Y',
   'IS_SEARCHABLE' => 'N',
   'SETTINGS' => 
   array (
-    'SIZE' => 100,
+    'SIZE' => 20,
     'ROWS' => 1,
     'REGEXP' => '',
-    'MIN_LENGTH' => 1,
-    'MAX_LENGTH' => 255,
+    'MIN_LENGTH' => 3,
+    'MAX_LENGTH' => 100,
     'DEFAULT_VALUE' => '',
   ),
   'EDIT_FORM_LABEL' => 
   array (
-    'en' => 'Company name',
-    'ru' => 'Название компании',
+    'en' => 'Position name',
+    'ru' => 'Наименование',
   ),
   'LIST_COLUMN_LABEL' => 
   array (
-    'en' => 'Company name',
-    'ru' => 'Название компании',
+    'en' => 'Position name',
+    'ru' => 'Наименование',
   ),
   'LIST_FILTER_LABEL' => 
   array (
-    'en' => 'Company name',
-    'ru' => 'Название компании',
+    'en' => 'Position name',
+    'ru' => 'Наименование',
   ),
   'ERROR_MESSAGE' => 
   array (
@@ -78,12 +78,12 @@ class Version20220807191218 extends Version
   ),
 ));
             $helper->Hlblock()->saveField($hlblockId, array (
-  'FIELD_NAME' => 'UF_COMPANY_INN_CODE',
+  'FIELD_NAME' => 'UF_COMPANY_CODE',
   'USER_TYPE_ID' => 'string',
-  'XML_ID' => 'COMPANY_INN_CODE',
+  'XML_ID' => 'COMPANY_CODE',
   'SORT' => '100',
   'MULTIPLE' => 'N',
-  'MANDATORY' => 'Y',
+  'MANDATORY' => 'N',
   'SHOW_FILTER' => 'S',
   'SHOW_IN_LIST' => 'Y',
   'EDIT_IN_LIST' => 'Y',
@@ -99,18 +99,18 @@ class Version20220807191218 extends Version
   ),
   'EDIT_FORM_LABEL' => 
   array (
-    'en' => 'Company INN code',
-    'ru' => 'ИНН компании',
+    'en' => 'COMPANY CODE',
+    'ru' => 'Код компании',
   ),
   'LIST_COLUMN_LABEL' => 
   array (
-    'en' => 'Company INN code',
-    'ru' => 'ИНН компании',
+    'en' => 'COMPANY CODE',
+    'ru' => 'Код компании',
   ),
   'LIST_FILTER_LABEL' => 
   array (
-    'en' => 'Company INN code',
-    'ru' => 'ИНН компании',
+    'en' => 'COMPANY CODE',
+    'ru' => 'Код компании',
   ),
   'ERROR_MESSAGE' => 
   array (
@@ -124,12 +124,12 @@ class Version20220807191218 extends Version
   ),
 ));
             $helper->Hlblock()->saveField($hlblockId, array (
-  'FIELD_NAME' => 'UF_COMPANY_ADDRESS',
+  'FIELD_NAME' => 'UF_POSITION_CODE',
   'USER_TYPE_ID' => 'string',
-  'XML_ID' => 'COMPANY_ADDRESS',
+  'XML_ID' => 'POSITION_CODE',
   'SORT' => '100',
   'MULTIPLE' => 'N',
-  'MANDATORY' => 'N',
+  'MANDATORY' => 'Y',
   'SHOW_FILTER' => 'S',
   'SHOW_IN_LIST' => 'Y',
   'EDIT_IN_LIST' => 'Y',
@@ -139,24 +139,24 @@ class Version20220807191218 extends Version
     'SIZE' => 20,
     'ROWS' => 1,
     'REGEXP' => '',
-    'MIN_LENGTH' => 1,
-    'MAX_LENGTH' => 225,
+    'MIN_LENGTH' => 3,
+    'MAX_LENGTH' => 20,
     'DEFAULT_VALUE' => '',
   ),
   'EDIT_FORM_LABEL' => 
   array (
-    'en' => 'Company address',
-    'ru' => 'Адрес компании',
+    'en' => 'Position code',
+    'ru' => 'Кол должности',
   ),
   'LIST_COLUMN_LABEL' => 
   array (
-    'en' => 'Company address',
-    'ru' => 'Адрес компании',
+    'en' => 'Position code',
+    'ru' => 'Кол должности',
   ),
   'LIST_FILTER_LABEL' => 
   array (
-    'en' => 'Company address',
-    'ru' => 'Адрес компании',
+    'en' => 'Position code',
+    'ru' => 'Кол должности',
   ),
   'ERROR_MESSAGE' => 
   array (
