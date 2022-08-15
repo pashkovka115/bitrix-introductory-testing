@@ -14,10 +14,5 @@
     "allow-plugins": {
       "composer/installers": true
     }
-  },
-  "autoload": {
-    "psr-4": {
-      "Ylab\\": "../app/"
-    }
   }
 }

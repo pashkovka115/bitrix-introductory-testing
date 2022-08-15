@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Bitrix\Highloadblock as HL;
 use Bitrix\Main\Engine\ActionFilter;
 
-use Ylab\ChunkReadFilter;
+require_once 'ChunkReadFilter.php';
 
 /**
  * Компонент импорта Организаций и Должностей
