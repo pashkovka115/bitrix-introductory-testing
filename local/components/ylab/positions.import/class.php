@@ -1,24 +1,23 @@
 <?php
 
-namespace YLab\Components;
 
-use Bitrix\Highloadblock as HL;
+use Bitrix\Main\Engine\Contract\Controllerable;
 use Bitrix\Main\Loader;
-use Bitrix\Main\Application;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use \CBitrixComponent;
+use Bitrix\Highloadblock as HL;
+use Bitrix\Main\Engine\ActionFilter;
 
+use Ylab\ChunkReadFilter;
 
 /**
- * Компонент для импорта компаний/должностей
+ * Компонент импорта Организаций и должностей
  *
- * Class PositionsListComponent
+ * Class PositionsImportComponent
  * @package YLab\Components
  *
  */
-class PositionsImportComponent extends CBitrixComponent
+class PositionsImportComponent extends CBitrixComponent implements Controllerable
 {
-
     /** @var string $positionsHlblockName Символьный код hl блока Должности */
     private string $positionsHlblockName;
 
@@ -26,15 +25,171 @@ class PositionsImportComponent extends CBitrixComponent
     private string $organizationsHlblockName;
 
 
+
     /**
-     * Метод executeComponent
+     * Медод установки фильтров
+     * Сбрасываем фильтры по-умолчанию (ActionFilter\Authentication и ActionFilter\HttpMethod)
+     * Обязательный метод
+     *
+     * @return array[][]
+     */
+    public function configureActions()
+    {
+        return [
+          'exampleRequest' => [
+            'prefilters' => []
+              , 'postfilters' => []
+          ]
+        ];
+    }
+
+
+    /**
+     * Метод Action обработка скрипта ajax после нажатия на кнопку Импорт
+     *
+     * @param $post
+     * @return string
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\LoaderException
+     * @throws \Bitrix\Main\ObjectPropertyException
+     * @throws \Bitrix\Main\SystemException
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     */
+    public function organizationImportAction($post)
+    {
+
+        if (Loader::IncludeModule('highloadblock')) {
+            $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
+        } else {
+            $this->arResult['IS_HL_MODULE_INCLUDED'] = false;
+        }
+
+        // Инициализация параметров компонента
+        if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
+            $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
+        }
+        if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
+            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
+        }
+
+
+        $result = [];
+
+        $path = $_SERVER['DOCUMENT_ROOT'] . (CFile::getPath($post['id']));
+
+        $pathPieces = explode("/", $path);
+        $file = array_pop($pathPieces);
+        $file_extension = explode(".", $file)[1];
+
+        if ($file_extension == "xlsx" || $file_extension == "xls") {
+            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = true;
+
+        } else {
+            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = false;
+            $result = "not_right_extension";
+            return $result;
+        }
+
+        $inputFileType = 'Xlsx';
+
+        if ($file_extension == "xls") {
+            $inputFileType = 'Xls';
+        }
+
+        /**  чтение чанками  **/
+        $session = Bitrix\Main\Application::getInstance()->getSession();
+
+        if ($session->has('startRow')) {
+            $startRow = $session->get('startRow');
+        } else {
+            $startRow = 2;
+        }
+
+        $chunkSize = 5;
+
+        if ($inputFileType == "Xlsx") {
+            $reader = IOFactory::createReader('Xlsx');
+        }
+        if ($inputFileType == "Xls") {
+            $reader = IOFactory::createReader('Xls');
+        }
+
+        $chunkFilter = new ChunkReadFilter();
+
+        do {
+            $chunkFilter->setRows($startRow, $chunkSize);
+            $reader->setReadFilter($chunkFilter);
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($path);
+
+            // координаты ячеек в чанке
+            $coordinates = $spreadsheet->getActiveSheet()->getCoordinates();
+
+            // Массив со значениями ячеек
+            $cellValues = [];
+            foreach ($coordinates as $coordinate) {
+                $cellValues[] = $spreadsheet->getActiveSheet()->getCell($coordinate)->getValue();
+            }
+
+            // Разбиваем массив чанками по 3, что соответствует столбцам A,B,C таблицы exel
+            $cellValuesAdapted = array_chunk($cellValues, 3 );
+
+
+            /**  запись в HL блока Организации  **/
+            $hlblockId = $this->getHlBlockIdByName('Organizations');
+
+            // Подготавливаем параметры для выборки из HL блока
+            $fetchHlParams = array('select' => ['*']);
+
+            $elements = $this->fetchAll($hlblockId, $fetchHlParams);
+
+            // массив с существующими ИНН
+            $arrInnCodes = [];
+            foreach ($elements as $element) {
+                $arrInnCodes[] = $element["UF_COMPANY_INN_CODE"];
+            }
+
+            // пишем записи в HL
+            foreach ($cellValuesAdapted as $cellValuesChunk) {
+
+
+                if (!in_array((string)$cellValuesChunk[2], $arrInnCodes) && !empty((string)$cellValuesChunk[2])) {
+
+                    $record = [];
+                    $record += ['UF_COMPANY_NAME'=>$cellValuesChunk[0]];
+                    $record += ['UF_COMPANY_ADDRESS'=>$cellValuesChunk[1]];
+                    $record += ['UF_COMPANY_INN_CODE'=>(string)$cellValuesChunk[2]];
+
+                    $this->addHLblockRecords($hlblockId, $record);
+                }
+
+            }
+
+            $startRow += $chunkSize;
+            $session->set('startRow', $startRow);
+
+            unset($reader);
+            unset($spreadsheet);
+
+        } while ($coordinates);
+
+
+        $result = "the_end";
+
+        $session->remove('startRow');
+
+        return $result;
+    }
+
+
+    /**
+     * Метод executeComponent()
      *
      * @return mixed|void|null
      * @throws \Bitrix\Main\LoaderException
      */
     public function executeComponent()
     {
-
         // Проверка на подключение модуля highloadblock
         if (Loader::IncludeModule('highloadblock')) {
             $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
@@ -51,219 +206,32 @@ class PositionsImportComponent extends CBitrixComponent
         }
 
 
-        // Работа логики компонента
-        if ($this->arResult['IS_HL_MODULE_INCLUDED'] &&
-          !empty($this->arParams['POSITIONS_HL_NAME']) &&
-          !empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-
-            $request = Application::getInstance()->getContext()->getRequest();
-
-            $action = $request->get('action');
-
-            if ($action == "import_xlsx") {
-                $this->arResult['IS_RIGHT_FILE_EXTENSION'] = true;
-                $this->importOrganizationsDataFromExel();
-                $this->importPositionsDataFromExel();
-            }
-
-            // Очистка параметров POST
-            if (!isset($_SESSION)) {
-                session_start();
-            }
-            if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-                $_SESSION['postdata'] = $_POST;
-                unset($_POST);
-                header("Location: " . $_SERVER['PHP_SELF']);
-                exit;
-            }
-            if (array_key_exists('postdata', $_SESSION)) {
-                unset($_SESSION['postdata']);
-            }
-        }
-
+        $this->arResult = [
+          'COMPONENT_ID' => $this->componentId(),
+          'SCRIPT_PATH' => $_SERVER['SCRIPT_NAME'],
+          'COMPONENT_DIRECTORY' => $this->GetPath()
+        ];
 
         $this->includeComponentTemplate();
     }
 
 
     /**
-     * Метод импорта данных из файла xlsx данных об Организациях
+     * Возвращает ID компонента
      *
-     * @throws \Bitrix\Main\ArgumentException
-     * @throws \Bitrix\Main\LoaderException
-     * @throws \Bitrix\Main\ObjectPropertyException
-     * @throws \Bitrix\Main\SystemException
-     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @return mixed
      */
-    private function importOrganizationsDataFromExel()
+    protected function componentId()
     {
-
-        $path = $_FILES['file-upload']['tmp_name'];
-        $name = $_FILES['file-upload']['name'];
-
-        $file_extension = explode(".", $name)[1];
-
-        if ($file_extension != "xlsx") {
-            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = false;
-            return;
+        $entryId = 'sometext';
+        $m = null;
+        /* вычленим только уникальную цифровую часть идентификатора */
+        if (preg_match('/^bx_(.*)_' . $entryId . '$/',
+          $this->getEditAreaId($entryId),
+          $m
+        )) {
+            return $m[1];
         }
-
-        $reader = IOFactory::createReader('Xlsx');
-        $spreadsheet = $reader->load($path);
-        // Только чтение данных
-        $reader->setReadDataOnly(true);
-
-        $allSheetsNames = $spreadsheet->getSheetNames();
-
-        $organizationsData = null;
-
-        if (in_array($this->organizationsHlblockName, $allSheetsNames)) {
-            $organizationsData = $spreadsheet->getSheetByName($this->organizationsHlblockName)->toArray();
-        }
-
-        // Массив с заголовками таблицы в xlsx (заголовки должны быть в 1-й строке документа/таблицы)
-        $orgFieldCodes = [];
-        // Массив с данными из xlsx
-        $orgRecords = [];
-
-        if (!is_null($organizationsData)) {
-            $orgRecords = &$organizationsData;
-            $orgFieldCodes = array_shift($orgRecords);
-        }
-
-        $hlblockId = $this->getHlBlockIdByName($this->organizationsHlblockName);
-        $hlBlockFieldsNames = [];
-
-        if ($this->isHlexist($hlblockId)) {
-            $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
-        }
-
-        // Подготавливаем параметры для выборки из HL блока
-        $fetchHlParams = array('select' => ['*']);
-
-        $elements = $this->fetchAll($hlblockId, $fetchHlParams);
-
-
-        // Если все поля из заголовка таблицы страницы xlsx есть в выбранном HL то пишем
-        if (empty(array_diff($orgFieldCodes, array_intersect($orgFieldCodes, $hlBlockFieldsNames)))) {
-
-            foreach ($orgRecords as $orgRecord) {
-                $rs = [];
-                $writePermission = true;
-                foreach ($orgRecord as $key => $value) {
-
-                    foreach ($orgFieldCodes as $k => $v) {
-                        if ($key == $k) {
-                            $rs[$v] = $value;
-                        }
-                    }
-
-                }
-                // Если запись из xlsx уже есть в HL то не пишем
-                foreach ($elements as $element) {
-                    if ($rs['UF_COMPANY_INN_CODE'] == $element['UF_COMPANY_INN_CODE']) {
-                        $writePermission = false;
-                    }
-                }
-                if ($writePermission) {
-                    $this->addHLblockRecords($hlblockId, $rs);
-                }
-
-            }
-
-        }
-
-    }
-
-
-    /**
-     *  Метод импорта данных из файла xlsx данных об Должностях
-     *
-     * @throws \Bitrix\Main\ArgumentException
-     * @throws \Bitrix\Main\LoaderException
-     * @throws \Bitrix\Main\ObjectPropertyException
-     * @throws \Bitrix\Main\SystemException
-     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
-     */
-    private function importPositionsDataFromExel()
-    {
-
-        $path = $_FILES['file-upload']['tmp_name'];
-        $name = $_FILES['file-upload']['name'];
-
-        $file_extension = explode(".", $name)[1];
-
-        if ($file_extension != "xlsx") {
-            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = false;
-            return;
-        }
-
-        $reader = IOFactory::createReader('Xlsx');
-        $spreadsheet = $reader->load($path);
-        // Только чтение данных
-        $reader->setReadDataOnly(true);
-
-        $allSheetsNames = $spreadsheet->getSheetNames();
-
-        $positionsData = null;
-
-        if (in_array($this->positionsHlblockName, $allSheetsNames)) {
-            $positionsData = $spreadsheet->getSheetByName($this->positionsHlblockName)->toArray();
-        }
-
-        // Массив с заголовками таблицы в xlsx (заголовки должны быть в 1-й строке документа/таблицы)
-        $positionsFieldCodes = [];
-        // Массив с данными из xlsx
-        $positionsRecords = [];
-
-        if (!is_null($positionsData)) {
-            $positionsRecords = &$positionsData;
-            $positionsFieldCodes = array_shift($positionsRecords);
-        }
-
-
-        $hlblockId = $this->getHlBlockIdByName($this->positionsHlblockName);
-        $hlBlockFieldsNames = [];
-
-        if ($this->isHlexist($hlblockId)) {
-            $hlBlockFieldsNames = $this->getHlBlockFieldsNames($hlblockId);
-        }
-
-        // Подготавливаем параметры для выборки из HL блока
-        $fetchHlParams = array('select' => ['*']);
-
-        $elements = $this->fetchAll($hlblockId, $fetchHlParams);
-
-        // Если все поля из заголовка таблицы страницы xlsx есть в выбранном HL то пишем
-        if (empty(array_diff($positionsFieldCodes, array_intersect($positionsFieldCodes, $hlBlockFieldsNames)))) {
-
-            foreach ($positionsRecords as $positionRecord) {
-                $rs = [];
-                $writePermission = true;
-                foreach ($positionRecord as $key => $value) {
-
-                    foreach ($positionsFieldCodes as $k => $v) {
-                        if ($key == $k) {
-                            $rs[$v] = $value;
-                        }
-                    }
-
-                }
-                // Если запись из xlsx уже есть в HL то не пишем
-                foreach ($elements as $element) {
-                    if ($rs['UF_COMPANY_CODE'] == $element['UF_COMPANY_CODE'] &&
-                      $rs['UF_POSITION_CODE'] == $element['UF_POSITION_CODE']) {
-                        $writePermission = false;
-                    }
-                }
-                if ($writePermission) {
-                    $this->addHLblockRecords($hlblockId, $rs);
-                }
-
-            }
-
-        }
-
     }
 
 
@@ -277,6 +245,7 @@ class PositionsImportComponent extends CBitrixComponent
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
+
     public static function getHlBlockIdByName($name)
     {
         $return = null;
@@ -305,6 +274,7 @@ class PositionsImportComponent extends CBitrixComponent
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
+
     public static function isHlexist($hlblockId): bool
     {
         $syteHlblockIds = [];
@@ -339,6 +309,7 @@ class PositionsImportComponent extends CBitrixComponent
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
+
     public static function getHlBlockFieldsNames($hlblockId)
     {
         $hlBlockFieldsNames = [];
@@ -368,6 +339,7 @@ class PositionsImportComponent extends CBitrixComponent
      * @param $limit
      * @return mixed
      */
+
     private function fetchAll($hlblockId, $fetchHlParams)
     {
 
@@ -402,6 +374,7 @@ class PositionsImportComponent extends CBitrixComponent
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
+
     private function getEntityDataClass($hlblockId)
     {
         $entityDataClass = null;
@@ -423,9 +396,10 @@ class PositionsImportComponent extends CBitrixComponent
      * @param $record
      * @throws \Bitrix\Main\LoaderException
      */
-    private function addHLblockRecords($hlblockId, $record)
+
+    public function addHLblockRecords($hlblockId, $record)
     {
-        if ( Loader::IncludeModule('highloadblock') && $this->isHlexist($hlblockId) ) {
+        if (Loader::IncludeModule('highloadblock') && $this->isHlexist($hlblockId)) {
             $entityDataClass = $this->getEntityDataClass($hlblockId);
             $entityDataClass::add($record);
         }
