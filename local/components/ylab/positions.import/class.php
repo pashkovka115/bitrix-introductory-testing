@@ -36,7 +36,7 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
     public function configureActions()
     {
         return [
-          'exampleRequest' => [
+          'organizationImport' => [
             'prefilters' => []
               , 'postfilters' => []
           ]
