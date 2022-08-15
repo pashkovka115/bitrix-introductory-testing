@@ -31,20 +31,15 @@ $arComponentParameters = array(
                 "VARIABLES" => array("ELEMENT_ID", "SECTION_ID"),
             ),
         ),
-        "IBLOCK_TYPE" => array(
-            "PARENT" => "BASE",
-            "NAME" => Loc::getMessage("BN_P_IBLOCK_TYPE"),
-            "TYPE" => "LIST",
-            "VALUES" => $arIBlockType,
-            "REFRESH" => "Y",
-        ),
-        "IBLOCK_ID" => array(
+        "IBLOCK_CODE" => array(
             "PARENT" => "BASE",
             "NAME" => GetMessage("BN_P_IBLOCK"),
-            "TYPE" => "LIST",
-            "VALUES" => $arIBlock,
-            "REFRESH" => "Y",
-            "ADDITIONAL_VALUES" => "Y",
+            "TYPE" => "STRING",
+        ),
+        "HLBLOCK_CODE" => array(
+            "PARENT" => "BASE",
+            "NAME" => GetMessage("BN_P_HLBLOCK"),
+            "TYPE" => "STRING",
         ),
         "SORT_BY1" => array(
             "PARENT" => "DATA_SOURCE",

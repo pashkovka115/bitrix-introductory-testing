@@ -11,9 +11,11 @@ global $USER;
 Loader::includeModule("highloadblock");
 Loader::includeModule("iblock");
 
-$iblockId = \Bitrix\Iblock\IblockTable::getList(['filter' => ['CODE' => 'YLAB_LESSONS']])->Fetch()["ID"];
+define("IBLOCK_CODE", $arParams['IBLOCK_CODE']);
+define("HLBLOCK_CODE", $arParams['HLBLOCK_CODE']);
 
-$hlbl = Hl\HighloadBlockTable::getList(['filter' => ['NAME' => 'ProgressPerLessons']])->fetch()['ID'];
+$iblockId = \Bitrix\Iblock\IblockTable::getList(['filter' => ['CODE' => IBLOCK_CODE]])->Fetch()["ID"];
+$hlbl = Hl\HighloadBlockTable::getList(['filter' => ['NAME' => HLBLOCK_CODE]])->fetch()['ID'];
 
 $hlblock = HL\HighloadBlockTable::getById($hlbl)->fetch();
 $entity = HL\HighloadBlockTable::compileEntity($hlblock);
@@ -123,43 +125,57 @@ if ($componentPage == 'list') {
         "filter" => ['UF_USER_ID' => $userID],
 
     ])->fetchAll();
+    $hlIdList = [];
+
+    foreach ($hlData as $hlDatum) {
+        $hlIdList[] = $hlDatum['UF_LESSON_ID'];
+    }
+
 
     $arAllActiveIbItems = \Bitrix\Iblock\ElementTable::getList([
         'select' => ['ID', 'NAME'],
         'filter' => [
             'IBLOCK_ID' => $iblockId,
-            'ACTIVE' => true,
+            'ACTIVE' => 'Y',
         ]
     ])->fetchAll();
 
+    $ibIdList = [];
+    foreach ($arAllActiveIbItems as $ibItem) {
+        $ibIdList[] = $ibItem['ID'];
+    }
 
-    $arCompletedL = [];
-    $arUncompleted = [];
-    foreach ($hlData as $hlDatum) {
-        foreach ($arAllActiveIbItems as $key => $ibItem) {
-            if (!array_diff($hlDatum, $ibItem)['UF_LESSON_ID']) {
-                if ($hlDatum['UF_COMPLETE'] == '1') {
-                    $arCompletedL[$key] = $ibItem;
-                    $arCompletedL[$key]['IS_COMPLETED'] = true;
-                } else {
-                    $arUncompleted[$key] = $ibItem;
-                    $arUncompleted[$key]['IS_COMPLETED'] = false;
-                }
+    $cUserLessons = array_intersect($ibIdList, $hlIdList);
+
+    $lessonsResult = [];
+    foreach ($arAllActiveIbItems as $ibLesson) {
+        foreach ($cUserLessons as $userLesson) {
+            if ($ibLesson['ID'] == $userLesson) {
+                $lessonData['ID'] = $ibLesson['ID'];
+                $lessonData['NAME'] = $ibLesson['NAME'];
+                $lessonsResult[] = $lessonData;
             }
         }
     }
-    $arSortedLessons = array_merge($arUncompleted, $arCompletedL);
+
+    foreach ($lessonsResult as $key => $lesson) {
+        foreach ($hlData as $hlDatum) {
+            if ($lesson['ID'] == $hlDatum['UF_LESSON_ID']) {
+                $lessonsResult[$key]['IS_COMPLETED'] = $hlDatum['UF_COMPLETE'] == 1;
+            }
+        }
+    }
 
     CIBlockElement::GetPropertyValuesArray($arAllLessonsImages, $iblockId, [], ['CODE' => 'IMAGE']);
 
-    foreach ($arSortedLessons as $kLesson => $lesson) {
+    foreach ($lessonsResult as $kLesson => $lesson) {
         foreach ($arAllLessonsImages as $kImage => $image) {
             if ($lesson['ID'] == $kImage) {
-                $arSortedLessons[$kLesson]['IMAGE'] = $image['IMAGE']['VALUE'];
+                $lessonsResult[$kLesson]['IMAGE'] = CFile::GetFileArray($image['IMAGE']['VALUE'])['SRC'];
             }
         }
     }
 
-    $arResult['LESSONS'] = array_merge($arSortedLessons);
+    $arResult['LESSONS'] = array_merge($lessonsResult);
 }
 $this->IncludeComponentTemplate($componentPage);
