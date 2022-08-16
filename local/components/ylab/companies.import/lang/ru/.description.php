@@ -1,0 +1,5 @@
+<?php
+$MESS['YLAB_COMPANIES_IMPORT_COMPONENT_NAME'] = 'Компонент для импорта компаний';
+$MESS['YLAB_COMPANIES_IMPORT_COMPONENT_DESCRIPTION'] = 'Компонент для импорта компаний';
+$MESS['YLAB_COMPANIES_IMPORT_COMPONENT_PATH_ID'] = 'ylab_local';
+$MESS['YLAB_COMPANIES_IMPORT_COMPONENT_PATH_NAME'] = 'Ylab';
