@@ -162,12 +162,12 @@ class OrganizationsImportComponent extends CBitrixComponent implements Controlle
             foreach ($cellValuesAdapted as $cellValuesChunk) {
 
 
-                if (!in_array((string)$cellValuesChunk[2], $arrInnCodes) && !empty((string)$cellValuesChunk[2])) {
+                if (!in_array(trim((string)$cellValuesChunk[2]), $arrInnCodes) && !empty((string)$cellValuesChunk[2])) {
 
                     $record = [];
-                    $record += ['UF_COMPANY_NAME' => $cellValuesChunk[0]];
-                    $record += ['UF_COMPANY_ADDRESS' => $cellValuesChunk[1]];
-                    $record += ['UF_COMPANY_INN_CODE' => (string)$cellValuesChunk[2]];
+                    $record += ['UF_COMPANY_NAME' => trim($cellValuesChunk[0])];
+                    $record += ['UF_COMPANY_ADDRESS' => trim($cellValuesChunk[1])];
+                    $record += ['UF_COMPANY_INN_CODE' => trim((string)$cellValuesChunk[2])];
 
                     $this->addHLblockRecords($hlblockId, $record);
                 }

@@ -172,10 +172,11 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
             foreach ($cellValuesAdapted as $cellValuesChunk) {
                 $record = [];
                 for ($i = 0; $i < count($arrOrgNames); $i++) {
-                    if ($arrOrgNames[$i] == $cellValuesChunk[1]) {
-                        $record += ['UF_POSITION_NAME' => $cellValuesChunk[0]];
-                        $record += ['UF_COMPANY_NAME' => $cellValuesChunk[1]];
-                        $record += ['UF_POSITION_CODE' => $cellValuesChunk[2]];
+//                    if ($arrOrgNames[$i] == trim($cellValuesChunk[1])) {
+                    if (strcmp($arrOrgNames[$i], trim($cellValuesChunk[1])) == 0) {
+                        $record += ['UF_POSITION_NAME' => trim($cellValuesChunk[0])];
+                        $record += ['UF_COMPANY_NAME' => trim($cellValuesChunk[1])];
+                        $record += ['UF_POSITION_CODE' => trim($cellValuesChunk[2])];
                         $record += ['UF_COMPANY_ID' => $arrOrgIds[$i]];
                         $this->addHLblockRecords($posHlId, $record);
                     }
