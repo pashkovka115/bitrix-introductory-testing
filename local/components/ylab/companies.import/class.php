@@ -212,17 +212,16 @@ class OrganizationsImportComponent extends CBitrixComponent implements Controlle
      * Метод возвращает ID HL блока по названию сущности
      *
      * @param $name
-     * @return mixed
+     * @return false|mixed
      * @throws \Bitrix\Main\ArgumentException
      * @throws \Bitrix\Main\LoaderException
      * @throws \Bitrix\Main\ObjectPropertyException
      * @throws \Bitrix\Main\SystemException
      */
-
     public static function getHlBlockIdByName($name)
     {
         if (!Loader::IncludeModule('highloadblock')) {
-            return;
+            return false;
         }
 
         $HL = HL\HighloadBlockTable::getList([
