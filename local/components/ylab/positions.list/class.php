@@ -121,7 +121,7 @@ class PositionsListComponent extends CBitrixComponent
             'ORGANIZATION' => array(
               'data_type' => $organizationsProgramDataClass,
               'reference' => array(
-                '=this.UF_COMPANY_CODE' => 'ref.UF_COMPANY_INN_CODE'
+                '=this.UF_COMPANY_ID' => 'ref.ID'
               ),
               'join_type' => 'inner'
             ),
@@ -343,8 +343,8 @@ class PositionsListComponent extends CBitrixComponent
     /**
      * Метод возвращает ID HL блока по названию сущности
      *
-     * @param $name - название сущности HL блока
-     * @return mixed
+     * @param $name
+     * @return false|mixed
      * @throws \Bitrix\Main\ArgumentException
      * @throws \Bitrix\Main\LoaderException
      * @throws \Bitrix\Main\ObjectPropertyException
@@ -352,16 +352,20 @@ class PositionsListComponent extends CBitrixComponent
      */
     public static function getHlBlockIdByName($name)
     {
-        $return = null;
+        if (!Loader::IncludeModule('highloadblock')) {
+            return false;
+        }
 
-        if (Loader::IncludeModule('highloadblock')) {
-            $HL = HL\HighloadBlockTable::getList([
-              'select' => ['ID'],
-              'filter' => ['NAME' => $name],
-              'limit' => '1',
-              'cache' => ['ttl' => 3600],
-            ]);
-            $return = $HL->fetch();
+        $HL = HL\HighloadBlockTable::getList([
+          'select' => ['ID'],
+          'filter' => ['NAME' => $name],
+          'limit' => '1',
+          'cache' => ['ttl' => 3600],
+        ]);
+        $return = $HL->fetch();
+
+        if (!$return) {
+            return false;
         }
 
         return $return['ID'];
