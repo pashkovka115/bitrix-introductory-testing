@@ -35,6 +35,7 @@ CJSCore::Init(array("fx", "ajax"));
 
 <?php
 $file_id = $_POST['NEW_FILE_UPLOAD'];
+$path = $_SERVER['DOCUMENT_ROOT'] . (CFile::getPath($file_id));
 ?>
 
 
@@ -48,7 +49,7 @@ $file_id = $_POST['NEW_FILE_UPLOAD'];
     });
 
     function repeat_import() {
-        BX.ajax.runComponentAction('ylab:positions.import2',
+        BX.ajax.runComponentAction('ylab:positions.import',
             'organizationImport', {
                 mode: 'class',
                 data: {post: {"id": <?=$file_id?>}},
