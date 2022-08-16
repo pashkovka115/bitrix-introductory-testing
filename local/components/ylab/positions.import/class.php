@@ -1,16 +1,16 @@
 <?php
 
-
 use Bitrix\Main\Engine\Contract\Controllerable;
 use Bitrix\Main\Loader;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Bitrix\Highloadblock as HL;
 use Bitrix\Main\Engine\ActionFilter;
+use Bitrix\Main\Application;
 
-require_once 'ChunkReadFilter.php';
+require 'ChunkReadFilter.php';
 
 /**
- * Компонент импорта Организаций и Должностей
+ * Компонент импорта Должностей
  *
  * Class PositionsImportComponent
  * @package YLab\Components
@@ -18,12 +18,36 @@ require_once 'ChunkReadFilter.php';
  */
 class PositionsImportComponent extends CBitrixComponent implements Controllerable
 {
-    /** @var string $positionsHlblockName Символьный код hl блока Должности */
-    private string $positionsHlblockName;
 
-    /** @var string $organizationsHlblockName Символьный код hl блока Организации */
-    private string $organizationsHlblockName;
+    /**
+     * Метод executeComponent()
+     *
+     * @return mixed|void|null
+     * @throws \Bitrix\Main\LoaderException
+     */
+    public function executeComponent()
+    {
+        // Проверка на подключение модуля highloadblock
+        if (Loader::IncludeModule('highloadblock')) {
+            $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
+            $this->arResult['COMPONENT_ID'] = $this->componentId();
+            $this->arResult['SCRIPT_PATH'] = $_SERVER['SCRIPT_NAME'];
+            $this->arResult['COMPONENT_DIRECTORY'] = $this->GetPath();
+        } else {
+            $this->arResult['IS_HL_MODULE_INCLUDED'] = false;
+        }
 
+        if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
+            $this->arResult['ORGANIZATIONS_HL_NAME'] = $this->arParams['ORGANIZATIONS_HL_NAME'];
+        }
+
+        if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
+            $this->arResult['POSITIONS_HL_NAME'] = $this->arParams['POSITIONS_HL_NAME'];
+        }
+
+
+        $this->includeComponentTemplate();
+    }
 
 
     /**
@@ -36,7 +60,7 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
     public function configureActions()
     {
         return [
-          'organizationImport' => [
+          'positionsImport' => [
             'prefilters' => []
               , 'postfilters' => []
           ]
@@ -55,23 +79,8 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
      * @throws \Bitrix\Main\SystemException
      * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
      */
-    public function organizationImportAction($post)
+    public function positionsImportAction($post)
     {
-
-        if (Loader::IncludeModule('highloadblock')) {
-            $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
-        } else {
-            $this->arResult['IS_HL_MODULE_INCLUDED'] = false;
-        }
-
-        // Инициализация параметров компонента
-        if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
-            $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
-        }
-        if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
-        }
-
 
         $result = [];
 
@@ -79,20 +88,23 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
 
         $pathPieces = explode("/", $path);
         $file = array_pop($pathPieces);
-        $file_extension = explode(".", $file)[1];
+        $pieces = explode(".", $file);
+        $posFileName = (string)$pieces[0];
+        $posFileExtension = (string)$pieces[1];
 
-        if ($file_extension == "xlsx" || $file_extension == "xls") {
-            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = true;
-
-        } else {
-            $this->arResult['IS_RIGHT_FILE_EXTENSION'] = false;
-            $result = "not_right_extension";
-            return $result;
+        if (strcmp(trim(mb_strtolower($posFileName)), "positions") != 0) {
+            return $result = "not_right_file";
         }
+        if ((strcmp(trim(mb_strtolower($posFileExtension)), "xlsx") != 0) &&
+          (strcmp(trim(mb_strtolower($posFileExtension)), "xls") != 0))
+        {
+            return $result = "not_right_file";
+        }
+
 
         $inputFileType = 'Xlsx';
 
-        if ($file_extension == "xls") {
+        if ($posFileExtension == "xls") {
             $inputFileType = 'Xls';
         }
 
@@ -105,6 +117,7 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
             $startRow = 2;
         }
 
+        // размер чанка
         $chunkSize = 5;
 
         if ($inputFileType == "Xlsx") {
@@ -116,6 +129,7 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
 
         $chunkFilter = new ChunkReadFilter();
 
+        // Основной цикл чтения из xlsx/xls чанками по 5 и последующей записи
         do {
             $chunkFilter->setRows($startRow, $chunkSize);
             $reader->setReadFilter($chunkFilter);
@@ -132,37 +146,40 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
             }
 
             // Разбиваем массив чанками по 3, что соответствует столбцам A,B,C таблицы exel
-            $cellValuesAdapted = array_chunk($cellValues, 3 );
+            $cellValuesAdapted = array_chunk($cellValues, 3);
 
 
-            /**  запись в HL блока Организации  **/
-            $hlblockId = $this->getHlBlockIdByName('Organizations');
+            /**  запись в HL блока Должности  **/
 
-            // Подготавливаем параметры для выборки из HL блока
-            $fetchHlParams = array('select' => ['*']);
+            $orgHlId = $this->getHlBlockIdByName('Organizations');
+            $posHlId = $this->getHlBlockIdByName('Positions');
 
-            $elements = $this->fetchAll($hlblockId, $fetchHlParams);
+            // Подготавливаем параметры для выборки из HL блока Organizations
+            $fetchOrgHlParams = array('select' => ['ID', 'UF_COMPANY_NAME']);
 
-            // массив с существующими ИНН
-            $arrInnCodes = [];
+            $elements = $this->fetchAll($orgHlId, $fetchOrgHlParams);
+
+            // массив с ID компаний
+            $arrOrgIds = [];
+            // массив с именами компаний
+            $arrOrgNames = [];
             foreach ($elements as $element) {
-                $arrInnCodes[] = $element["UF_COMPANY_INN_CODE"];
+                $arrOrgIds[] = $element["ID"];
+                $arrOrgNames[] = $element["UF_COMPANY_NAME"];
             }
 
-            // пишем записи в HL
+            // пишем записи в HL Должности
             foreach ($cellValuesAdapted as $cellValuesChunk) {
-
-
-                if (!in_array((string)$cellValuesChunk[2], $arrInnCodes) && !empty((string)$cellValuesChunk[2])) {
-
-                    $record = [];
-                    $record += ['UF_COMPANY_NAME'=>$cellValuesChunk[0]];
-                    $record += ['UF_COMPANY_ADDRESS'=>$cellValuesChunk[1]];
-                    $record += ['UF_COMPANY_INN_CODE'=>(string)$cellValuesChunk[2]];
-
-                    $this->addHLblockRecords($hlblockId, $record);
+                $record = [];
+                for ($i = 0; $i < count($arrOrgNames); $i++) {
+                    if ($arrOrgNames[$i] == $cellValuesChunk[1]) {
+                        $record += ['UF_POSITION_NAME' => $cellValuesChunk[0]];
+                        $record += ['UF_COMPANY_NAME' => $cellValuesChunk[1]];
+                        $record += ['UF_POSITION_CODE' => $cellValuesChunk[2]];
+                        $record += ['UF_COMPANY_ID' => $arrOrgIds[$i]];
+                        $this->addHLblockRecords($posHlId, $record);
+                    }
                 }
-
             }
 
             $startRow += $chunkSize;
@@ -183,53 +200,17 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
 
 
     /**
-     * Метод executeComponent()
-     *
-     * @return mixed|void|null
-     * @throws \Bitrix\Main\LoaderException
-     */
-    public function executeComponent()
-    {
-        // Проверка на подключение модуля highloadblock
-        if (Loader::IncludeModule('highloadblock')) {
-            $this->arResult['IS_HL_MODULE_INCLUDED'] = true;
-        } else {
-            $this->arResult['IS_HL_MODULE_INCLUDED'] = false;
-        }
-
-        // Инициализация параметров компонента
-        if (!empty($this->arParams['POSITIONS_HL_NAME'])) {
-            $this->positionsHlblockName = $this->arParams['POSITIONS_HL_NAME'];
-        }
-        if (!empty($this->arParams['ORGANIZATIONS_HL_NAME'])) {
-            $this->organizationsHlblockName = $this->arParams['ORGANIZATIONS_HL_NAME'];
-        }
-
-
-        $this->arResult = [
-          'COMPONENT_ID' => $this->componentId(),
-          'SCRIPT_PATH' => $_SERVER['SCRIPT_NAME'],
-          'COMPONENT_DIRECTORY' => $this->GetPath()
-        ];
-
-        $this->includeComponentTemplate();
-    }
-
-
-    /**
      * Возвращает ID компонента
      *
      * @return mixed
      */
     protected function componentId()
     {
-        $entryId = 'sometext';
+        $entryId = 'positions';
         $m = null;
         /* вычленим только уникальную цифровую часть идентификатора */
         if (preg_match('/^bx_(.*)_' . $entryId . '$/',
-          $this->getEditAreaId($entryId),
-          $m
-        )) {
+          $this->getEditAreaId($entryId),)) {
             return $m[1];
         }
     }
@@ -248,16 +229,20 @@ class PositionsImportComponent extends CBitrixComponent implements Controllerabl
 
     public static function getHlBlockIdByName($name)
     {
-        $return = null;
+        if (!Loader::IncludeModule('highloadblock')) {
+            return;
+        }
 
-        if (Loader::IncludeModule('highloadblock')) {
-            $HL = HL\HighloadBlockTable::getList([
-              'select' => ['ID'],
-              'filter' => ['NAME' => $name],
-              'limit' => '1',
-              'cache' => ['ttl' => 3600],
-            ]);
-            $return = $HL->fetch();
+        $HL = HL\HighloadBlockTable::getList([
+          'select' => ['ID'],
+          'filter' => ['NAME' => $name],
+          'limit' => '1',
+          'cache' => ['ttl' => 3600],
+        ]);
+        $return = $HL->fetch();
+
+        if (!$return) {
+            return false;
         }
 
         return $return['ID'];

@@ -7,35 +7,53 @@ CUtil::InitJSCore();
 CJSCore::Init(array("fx", "ajax"));
 ?>
 
+<? if (!$arResult['IS_HL_MODULE_INCLUDED']) : ?>
 
-<? if (!empty($arParams['POSITIONS_HL_NAME']) && !empty($arParams['ORGANIZATIONS_HL_NAME'])) : ?>
-    <h3 class=""><?= Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_TITLE') ?></h3>
-    <div id="progress-bar"><?= Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_PROGRESS_BAR_CAPTION') ?></div>
-    <div id="content"></div>
-    <form action="<?= POST_FORM_ACTION_URI ?>" method="POST" id="import-form">
+    <?= Loc::getMessage('YLAB_POSITIONS_IMPORT_TEMPLATE_ERROR1') ?>
+    <?= '<br>' ?>
 
-        <? $APPLICATION->IncludeComponent("bitrix:main.file.input", "",
-          array(
-            "INPUT_NAME" => "NEW_FILE_UPLOAD",
-            "MULTIPLE" => "N",
-            "MODULE_ID" => "iblock",
-            "MAX_FILE_SIZE" => "",
-            "ALLOW_UPLOAD" => "F",
-            "ALLOW_UPLOAD_EXT" => 'xlsx, xls',
-            "INPUT_VALUE" => $_POST['NEW_FILE_UPLOAD']
-          ),
-          false
+<? else: ?>
 
-        ); ?>
+    <? if (empty($arParams['POSITIONS_HL_NAME'])) : ?>
+        <?= Loc::getMessage('YLAB_POSITIONS_IMPORT_TEMPLATE_ERROR2') ?>
+        <?= '<br>' ?>
+    <? endif; ?>
 
-        <input type="submit" id="import-button" value=<?= Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_BUTTON_TITLE') ?>>
-    </form>
+    <? if (empty($arParams['ORGANIZATIONS_HL_NAME'])) : ?>
+        <?= Loc::getMessage('YLAB_POSITIONS_IMPORT_TEMPLATE_ERROR3') ?>
+        <?= '<br>' ?>
+    <? endif; ?>
 
+
+    <? if (!empty($arParams['POSITIONS_HL_NAME']) && !empty($arParams['ORGANIZATIONS_HL_NAME'])) : ?>
+        <h3 class=""><?= Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_TITLE') ?></h3>
+        <div id="progress-bar"><?= Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_PROGRESS_BAR_CAPTION') ?></div>
+        <div id="content"></div>
+        <form action="<?= POST_FORM_ACTION_URI ?>" method="POST" id="import-form">
+
+            <? $APPLICATION->IncludeComponent("bitrix:main.file.input", "",
+              array(
+                "INPUT_NAME" => "NEW_FILE_UPLOAD",
+                "MULTIPLE" => "N",
+                "MODULE_ID" => "main",
+                "MAX_FILE_SIZE" => "",
+                "ALLOW_UPLOAD" => "F",
+                "ALLOW_UPLOAD_EXT" => 'xlsx, xls',
+                "INPUT_VALUE" => $_POST['NEW_FILE_UPLOAD']
+              ),
+              false
+
+            ); ?>
+
+            <input type="submit" id="import-button"
+                   value=<?= Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_BUTTON_TITLE') ?>>
+        </form>
+
+    <? endif; ?>
 <? endif; ?>
 
 <?php
 $file_id = $_POST['NEW_FILE_UPLOAD'];
-$path = $_SERVER['DOCUMENT_ROOT'] . (CFile::getPath($file_id));
 ?>
 
 
@@ -44,13 +62,15 @@ $path = $_SERVER['DOCUMENT_ROOT'] . (CFile::getPath($file_id));
     content = BX('content');
     progress_bar = BX('progress-bar');
 
-    BX.bind(button, 'click', ()=> {
+
+    BX.bind(button, 'click', () => {
         repeat_import();
     });
 
+
     function repeat_import() {
         BX.ajax.runComponentAction('ylab:positions.import',
-            'organizationImport', {
+            'positionsImport', {
                 mode: 'class',
                 data: {post: {"id": <?=$file_id?>}},
                 method: 'POST',
@@ -63,7 +83,7 @@ $path = $_SERVER['DOCUMENT_ROOT'] . (CFile::getPath($file_id));
                     console.log(response);
                     content.innerText = <?='"' . Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_FINISHED') . '"'?>;
 
-                } else if (response.data === 'not_right_extension') {
+                } else if (response.data === 'not_right_file') {
                     console.log(response);
                     content.innerText = <?='"' . Loc::getMessage('YLAB_POSITIONS_IMPORT_FORM_WRONG_EXTENSION') . '"'?>;
                 } else {
